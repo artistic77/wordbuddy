@@ -6,10 +6,11 @@
 import type { TranslationResponse, PartOfSpeech } from '../types';
 
 export const isAzureOpenAIConfigured = (): boolean => {
-  return Boolean(
+  const configured = Boolean(
     import.meta.env.VITE_AZURE_OPENAI_KEY &&
     import.meta.env.VITE_AZURE_OPENAI_ENDPOINT
   );
+  return configured;
 };
 
 const getAzureOpenAIUrl = (): string => {
@@ -43,6 +44,7 @@ export const generateVocabWithAzureOpenAI = async (word: string): Promise<Transl
 
   const cleanWord = word.trim();
   const url = getAzureOpenAIUrl();
+  console.log(`[Azure OpenAI] Requesting gpt-4.1-mini for word: "${cleanWord}" -> ${url}`);
 
   const systemPrompt = `You are an expert English-Thai bilingual educational linguist.
 For any given English vocabulary word or phrase, generate:

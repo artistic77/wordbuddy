@@ -135,15 +135,18 @@ const EDUCATIONAL_DICTIONARY: Record<string, TranslationResponse> = {
 
 export const translateWord = async (word: string): Promise<TranslationResponse> => {
   const cleanWord = word.trim().toLowerCase();
+  console.log(`[AI Service] translateWord("${word}") | Azure OpenAI configured: ${isAzureOpenAIConfigured()} | Azure Translator configured: ${isAzureTranslatorConfigured()}`);
 
   // 1. Check local dictionary first for instant response
   if (EDUCATIONAL_DICTIONARY[cleanWord]) {
+    console.log(`[AI Service] Found in built-in dictionary: "${cleanWord}"`);
     return EDUCATIONAL_DICTIONARY[cleanWord];
   }
 
   // 2. Microsoft Azure OpenAI Service (gpt-4o-mini) (Priority 1)
   if (isAzureOpenAIConfigured()) {
     try {
+      console.log(`[AI Service] Calling Azure OpenAI (gpt-4.1-mini) for "${word}"...`);
       const azOpenAiResult = await generateVocabWithAzureOpenAI(word.trim());
       if (azOpenAiResult && azOpenAiResult.word_th) {
         return azOpenAiResult;
@@ -156,6 +159,7 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
   // 3. Microsoft Azure Translator API (Priority 2)
   if (isAzureTranslatorConfigured()) {
     try {
+      console.log(`[AI Service] Calling Azure Translator for "${word}"...`);
       const azResult = await translateWithAzure(word.trim(), 'en', 'th');
       return {
         ...azResult,
