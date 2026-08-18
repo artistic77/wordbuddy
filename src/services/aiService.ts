@@ -216,24 +216,7 @@ Respond ONLY with valid JSON:
     }
   }
 
-  // 5. Call Supabase Edge Function if configured
-  if (isSupabaseConfigured) {
-    try {
-      const { data, error } = await supabase.functions.invoke('ai', {
-        body: { action: 'translate', word },
-      });
-      if (!error && data && data.word_th) {
-        return {
-          ...(data as TranslationResponse),
-          reading_th: data.reading_th || getThaiPhonetic(cleanWord),
-        };
-      }
-    } catch (err) {
-      console.warn('Edge function invoke failed:', err);
-    }
-  }
-
-  // 6. Heuristic Fallback
+  // 5. Heuristic Dictionary Fallback
   return {
     word_en: word.trim(),
     word_th: `คำศัพท์: ${word.trim()}`,
