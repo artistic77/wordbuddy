@@ -95,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, displayName: string) => {
     try {
+      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/login` : undefined;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -102,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             display_name: displayName,
           },
+          emailRedirectTo: redirectUrl,
         },
       });
 
