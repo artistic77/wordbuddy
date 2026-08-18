@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Word Buddy - Spelling Game</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Sarabun:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-base": "#FFFFFF",
+                        "primary-fixed": "#e3dfff",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-container": "#b65c00",
+                        "on-surface-variant": "#464555",
+                        "surface": "#f9f9ff",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-high": "#e1e8fd",
+                        "on-secondary-fixed": "#181b26",
+                        "warning": "#FFD166",
+                        "secondary-fixed-dim": "#c3c6d4",
+                        "inverse-on-surface": "#edf0ff",
+                        "text-muted": "#6B7280",
+                        "surface-dim": "#d3daef",
+                        "primary-fixed-dim": "#c4c0ff",
+                        "tertiary": "#914800",
+                        "secondary-fixed": "#e0e2f0",
+                        "outline": "#777587",
+                        "surface-container": "#e9edff",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-bright": "#f9f9ff",
+                        "on-primary-fixed": "#100069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#5f626f",
+                        "surface-tint": "#4f44e2",
+                        "inverse-primary": "#c4c0ff",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c7c4d8",
+                        "secondary": "#5b5e6a",
+                        "surface-container-highest": "#dce2f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-subtle": "#F9FAFB",
+                        "on-primary-fixed-variant": "#3622ca",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#434652",
+                        "error": "#FF6B6B",
+                        "on-surface": "#141b2b",
+                        "surface-variant": "#dce2f7",
+                        "border-base": "#E5E7EB",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "primary": "#4d41df",
+                        "on-tertiary-fixed": "#301400",
+                        "primary-container": "#675df9",
+                        "success": "#06D6A0",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#293040",
+                        "secondary-container": "#dddfee"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "page-margin-mb": "24px",
+                        "page-margin-dt": "48px",
+                        "gutter": "16px",
+                        "max-width-modal": "600px",
+                        "component-height": "48px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Outfit"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Outfit"],
+                        "label-md": ["Inter"],
+                        "thai-display": ["Sarabun"],
+                        "headline-md": ["Outfit"],
+                        "body-sm": ["Inter"],
+                        "display-hero": ["Outfit"],
+                        "headline-sm": ["Outfit"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-lg-mobile": ["28px", { lineHeight: "36px", fontWeight: "700" }],
+                        "label-md": ["13px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
+                        "thai-display": ["28px", { lineHeight: "1.4", fontWeight: "500" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "display-hero": ["40px", { lineHeight: "1.2", fontWeight: "700" }],
+                        "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(77, 65, 223, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(77, 65, 223, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(77, 65, 223, 0); }
+        }
+        
+        .focus-glow:focus-within {
+            box-shadow: 0 0 0 4px rgba(77, 65, 223, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-surface-subtle text-on-surface min-h-screen flex flex-col font-body-lg">
+<!-- Top Navigation (Shell suppressed for focused task, providing a minimal back/exit header) -->
+<header class="w-full h-16 flex items-center justify-between px-page-margin-mb md:px-page-margin-dt">
+<button aria-label="Exit Game" class="w-10 h-10 rounded-full flex items-center justify-center text-secondary hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="flex items-center gap-2">
+<span class="text-body-sm font-body-sm text-text-muted">Set: Advanced Vocabulary</span>
+</div>
+<div class="w-10 h-10 flex items-center justify-center">
+<!-- Placeholder for symmetric layout -->
+</div>
+</header>
+<main class="flex-grow flex flex-col items-center justify-center px-page-margin-mb md:px-page-margin-dt w-full max-w-4xl mx-auto py-8">
+<!-- Game Container -->
+<div class="w-full max-w-2xl bg-surface-base rounded-[24px] shadow-sm flex flex-col items-center p-8 md:p-12 relative overflow-hidden">
+<!-- Progress Bar -->
+<div class="absolute top-0 left-0 w-full h-1.5 bg-surface-container-high">
+<div class="h-full bg-primary rounded-r-full" style="width: 35%;"></div>
+</div>
+<!-- Progress Text -->
+<div class="w-full flex justify-between text-label-md font-label-md text-text-muted mb-12">
+<span>Word 4 of 10</span>
+<span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-[16px]">local_fire_department</span> 3 Streak</span>
+</div>
+<!-- Main Interactive Area -->
+<div class="flex flex-col items-center w-full space-y-12 mb-8">
+<!-- Speaker Button -->
+<button aria-label="Play Word" class="pulse-ring w-24 h-24 md:w-32 md:h-32 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center transform transition-transform hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined fill text-[48px] md:text-[64px]">volume_up</span>
+</button>
+<p class="text-body-sm font-body-sm text-secondary text-center">Listen carefully and type the word.</p>
+<!-- Input Area -->
+<div class="w-full max-w-md focus-glow rounded-xl transition-shadow duration-200">
+<input autocomplete="off" autofocus="" class="w-full h-16 px-6 text-center text-headline-md font-headline-md text-on-surface bg-surface-base border-2 border-border-base rounded-xl focus:border-primary focus:outline-none placeholder:text-outline-variant" placeholder="Type here..." type="text"/>
+</div>
+</div>
+<!-- Feedback Area (Hidden by default, shown for demo) -->
+<div class="w-full h-12 flex items-center justify-center opacity-0 transition-opacity duration-300" id="feedback-area">
+<!-- Example Success State (add opacity-100 to parent to show) -->
+<!-- <span class="text-success font-headline-sm text-headline-sm flex items-center gap-2"><span class="material-symbols-outlined">check_circle</span> Correct!</span> -->
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="w-full max-w-2xl mt-8 flex justify-between items-center gap-4">
+<button class="px-6 h-12 rounded-xl text-primary font-label-md text-label-md hover:bg-primary-fixed transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">lightbulb</span> Hint
+            </button>
+<button class="px-8 h-12 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-sm hover:scale-102 active:scale-95 transition-transform flex items-center gap-2">
+                Submit <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</main>
+<script>
+        // Simple script for input focus interaction
+        const inputField = document.querySelector('input');
+        const speakerBtn = document.querySelector('.pulse-ring');
+        
+        inputField.addEventListener('focus', () => {
+            speakerBtn.classList.remove('pulse-ring');
+        });
+        
+        inputField.addEventListener('blur', () => {
+            if(inputField.value === '') {
+                speakerBtn.classList.add('pulse-ring');
+            }
+        });
+    </script>
+</body></html>

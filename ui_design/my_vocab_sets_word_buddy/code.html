@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Vocab Sets - Word Buddy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=Sarabun:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-base": "#FFFFFF",
+                      "primary-fixed": "#e3dfff",
+                      "on-tertiary-container": "#fffbff",
+                      "tertiary-container": "#b65c00",
+                      "on-surface-variant": "#464555",
+                      "surface": "#f9f9ff",
+                      "on-primary-container": "#fffbff",
+                      "surface-container-high": "#e1e8fd",
+                      "on-secondary-fixed": "#181b26",
+                      "warning": "#FFD166",
+                      "secondary-fixed-dim": "#c3c6d4",
+                      "inverse-on-surface": "#edf0ff",
+                      "text-muted": "#6B7280",
+                      "surface-dim": "#d3daef",
+                      "primary-fixed-dim": "#c4c0ff",
+                      "tertiary": "#914800",
+                      "secondary-fixed": "#e0e2f0",
+                      "outline": "#777587",
+                      "surface-container": "#e9edff",
+                      "on-tertiary-fixed-variant": "#713700",
+                      "on-error-container": "#93000a",
+                      "on-tertiary": "#ffffff",
+                      "on-background": "#141b2b",
+                      "surface-container-low": "#f1f3ff",
+                      "surface-bright": "#f9f9ff",
+                      "on-primary-fixed": "#100069",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-container": "#5f626f",
+                      "surface-tint": "#4f44e2",
+                      "inverse-primary": "#c4c0ff",
+                      "on-primary": "#ffffff",
+                      "outline-variant": "#c7c4d8",
+                      "secondary": "#5b5e6a",
+                      "surface-container-highest": "#dce2f7",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-subtle": "#F9FAFB",
+                      "on-primary-fixed-variant": "#3622ca",
+                      "on-error": "#ffffff",
+                      "tertiary-fixed": "#ffdcc6",
+                      "background": "#f9f9ff",
+                      "on-secondary-fixed-variant": "#434652",
+                      "error": "#FF6B6B",
+                      "on-surface": "#141b2b",
+                      "surface-variant": "#dce2f7",
+                      "border-base": "#E5E7EB",
+                      "tertiary-fixed-dim": "#ffb785",
+                      "primary": "#4d41df",
+                      "on-tertiary-fixed": "#301400",
+                      "primary-container": "#675df9",
+                      "success": "#06D6A0",
+                      "error-container": "#ffdad6",
+                      "inverse-surface": "#293040",
+                      "secondary-container": "#dddfee"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "page-margin-mb": "24px",
+                      "page-margin-dt": "48px",
+                      "gutter": "16px",
+                      "max-width-modal": "600px",
+                      "component-height": "48px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Outfit"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Outfit"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "thai-display": [
+                              "Sarabun"
+                      ],
+                      "headline-md": [
+                              "Outfit"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "display-hero": [
+                              "Outfit"
+                      ],
+                      "headline-sm": [
+                              "Outfit"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "thai-display": [
+                              "28px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-hero": [
+                              "40px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(108, 99, 255, 0.12);
+        }
+        .card-shadow {
+            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-surface-subtle text-on-surface font-body-lg min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface-base dark:bg-inverse-surface text-primary dark:text-inverse-primary shadow-sm dark:shadow-none docked full-width top w-full">
+<div class="flex justify-between items-center w-full px-page-margin-dt max-w-7xl mx-auto h-component-height">
+<div class="flex items-center gap-6">
+<span class="text-headline-md font-headline-md font-bold text-on-surface dark:text-inverse-on-surface cursor-pointer scale-102 hover:scale-105 active:scale-95 transition-transform">Word Buddy</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Home</a>
+<a class="font-label-md text-label-md text-primary dark:text-primary-fixed border-b-2 border-primary dark:border-primary-fixed pb-1 hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">My Sets</a>
+<a class="font-label-md text-label-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200" href="#">Explore</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button aria-label="notifications" class="text-on-surface-variant hover:text-primary transition-colors scale-102 hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden cursor-pointer scale-102 hover:scale-105 active:scale-95 transition-transform">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A close-up, professional headshot of a user with a neutral, friendly expression. Bright, airy lighting, minimalist light-mode aesthetic, soft background. Modern educational context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDI9czhwyIa3x5lcMFOZq6zYqVvhebUtkIrDvyUfEtYI-VplrNYdnvQVRLPTEKCH6qjLZo3dhYFAPPEaSUNpKaNsoXcC_RkQz4vghPzY15y6bGuNtWaS0YksSI6ZnTjryaHXro6RzNAztGCMcvlt-NgFdSg2pax5S7CqjEiEavrKKF30xooVHf_Q2AiLOj7IJfNpbmkdII2-c3lct_DwNDRCGobq0WbtxUl5uTOXgr7DUv44YI9dHwe-A"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-page-margin-mb md:px-page-margin-dt py-8 md:py-12">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">My Vocab Sets</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage and study your vocabulary collections.</p>
+</div>
+<button class="bg-primary text-on-primary font-label-md text-label-md h-component-height px-6 rounded-xl flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+                New Set
+            </button>
+</div>
+<!-- Toolbar (Search & Filters) -->
+<div class="flex flex-col sm:flex-row gap-4 mb-8">
+<div class="relative flex-grow max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full h-component-height pl-10 pr-4 rounded-[10px] border border-border-base bg-surface-base font-body-lg text-body-lg text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all duration-150 placeholder:text-text-muted" placeholder="Search sets..." type="text"/>
+</div>
+<div class="relative">
+<select class="appearance-none w-full sm:w-48 h-component-height pl-4 pr-10 rounded-[10px] border border-border-base bg-surface-base font-body-lg text-body-lg text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 transition-all duration-150 cursor-pointer">
+<option value="recent">Recently Viewed</option>
+<option value="az">A-Z</option>
+<option value="za">Z-A</option>
+<option value="large">Largest Sets</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<!-- Bento Grid / Cards Layout -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Card 1 -->
+<div class="bg-surface-base rounded-[16px] p-6 flex flex-col justify-between card-shadow hover-lift group border border-transparent hover:border-primary/20 cursor-pointer min-h-[220px]">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="inline-block px-2 py-1 rounded-[6px] border border-primary text-primary font-label-md text-label-md bg-primary/5 w-fit">42 words</span>
+</div>
+<button aria-label="more options" class="text-on-surface-variant hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Advanced Spanish Verbs</h3>
+<p class="font-body-sm text-body-sm text-text-muted line-clamp-2">Irregular verbs and complex conjugations for advanced conversational fluency.</p>
+</div>
+<button class="w-full h-10 mt-6 rounded-[8px] bg-secondary-container text-primary font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+                    Study
+                </button>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-base rounded-[16px] p-6 flex flex-col justify-between card-shadow hover-lift group border border-transparent hover:border-primary/20 cursor-pointer min-h-[220px]">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="inline-block px-2 py-1 rounded-[6px] border border-primary text-primary font-label-md text-label-md bg-primary/5 w-fit">128 words</span>
+</div>
+<button aria-label="more options" class="text-on-surface-variant hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">JLPT N4 Vocabulary</h3>
+<p class="font-body-sm text-body-sm text-text-muted line-clamp-2">Essential vocabulary list for the Japanese Language Proficiency Test N4.</p>
+</div>
+<button class="w-full h-10 mt-6 rounded-[8px] bg-secondary-container text-primary font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+                    Study
+                </button>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-base rounded-[16px] p-6 flex flex-col justify-between card-shadow hover-lift group border-2 border-primary cursor-pointer min-h-[220px] relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -z-0"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="inline-block px-2 py-1 rounded-[6px] border border-primary text-primary font-label-md text-label-md bg-primary/5 w-fit">15 words</span>
+</div>
+<button aria-label="more options" class="text-on-surface-variant hover:text-primary transition-opacity">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Weekly Goal: French Idioms</h3>
+<p class="font-body-sm text-body-sm text-text-muted line-clamp-2">Common everyday idioms used in Paris.</p>
+</div>
+<button class="w-full h-10 mt-6 rounded-[8px] bg-primary text-on-primary font-label-md text-label-md hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2 relative z-10">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow">play_arrow</span>
+                    Resume
+                </button>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-base rounded-[16px] p-6 flex flex-col justify-between card-shadow hover-lift group border border-transparent hover:border-primary/20 cursor-pointer min-h-[220px]">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="inline-block px-2 py-1 rounded-[6px] border border-primary text-primary font-label-md text-label-md bg-primary/5 w-fit">85 words</span>
+</div>
+<button aria-label="more options" class="text-on-surface-variant hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Medical Terminology</h3>
+<p class="font-body-sm text-body-sm text-text-muted line-clamp-2">Prefixes, suffixes, and root words for anatomy and physiology.</p>
+</div>
+<button class="w-full h-10 mt-6 rounded-[8px] bg-secondary-container text-primary font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+                    Study
+                </button>
+</div>
+<!-- Card 5 -->
+<div class="bg-surface-base rounded-[16px] p-6 flex flex-col justify-between card-shadow hover-lift group border border-transparent hover:border-primary/20 cursor-pointer min-h-[220px]">
+<div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="inline-block px-2 py-1 rounded-[6px] border border-primary text-primary font-label-md text-label-md bg-primary/5 w-fit">20 words</span>
+</div>
+<button aria-label="more options" class="text-on-surface-variant hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">GRE High Frequency</h3>
+<p class="font-body-sm text-body-sm text-text-muted line-clamp-2">Must-know words for the graduate record examination.</p>
+</div>
+<button class="w-full h-10 mt-6 rounded-[8px] bg-secondary-container text-primary font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+                    Study
+                </button>
+</div>
+<!-- Add New Placeholder Card -->
+<div class="bg-surface-base/50 rounded-[16px] p-6 flex flex-col items-center justify-center border-2 border-dashed border-border-base hover:border-primary/50 cursor-pointer min-h-[220px] transition-colors group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[24px] text-primary" data-icon="add">add</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant group-hover:text-primary transition-colors">Create New Set</span>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-base dark:bg-inverse-surface border-t border-border-base dark:border-outline-variant full-width bottom w-full mt-auto">
+<div class="w-full py-8 px-page-margin-dt flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto">
+<div class="font-headline-sm font-bold text-on-surface mb-4 md:mb-0">
+                © 2024 Word Buddy
+            </div>
+<div class="flex gap-6">
+<a class="font-label-md text-label-md text-text-muted dark:text-on-secondary-fixed-variant hover:text-primary dark:hover:text-primary-fixed underline opacity-80 hover:opacity-100 transition-opacity" href="#">Privacy Policy</a>
+<a class="font-label-md text-label-md text-text-muted dark:text-on-secondary-fixed-variant hover:text-primary dark:hover:text-primary-fixed underline opacity-80 hover:opacity-100 transition-opacity" href="#">Terms of Service</a>
+<a class="font-label-md text-label-md text-text-muted dark:text-on-secondary-fixed-variant hover:text-primary dark:hover:text-primary-fixed underline opacity-80 hover:opacity-100 transition-opacity" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+</body></html>

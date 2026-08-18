@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Word Buddy - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-base": "#FFFFFF",
+                        "primary-fixed": "#e3dfff",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-container": "#b65c00",
+                        "on-surface-variant": "#464555",
+                        "surface": "#f9f9ff",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-high": "#e1e8fd",
+                        "on-secondary-fixed": "#181b26",
+                        "warning": "#FFD166",
+                        "secondary-fixed-dim": "#c3c6d4",
+                        "inverse-on-surface": "#edf0ff",
+                        "text-muted": "#6B7280",
+                        "surface-dim": "#d3daef",
+                        "primary-fixed-dim": "#c4c0ff",
+                        "tertiary": "#914800",
+                        "secondary-fixed": "#e0e2f0",
+                        "outline": "#777587",
+                        "surface-container": "#e9edff",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-bright": "#f9f9ff",
+                        "on-primary-fixed": "#100069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#5f626f",
+                        "surface-tint": "#4f44e2",
+                        "inverse-primary": "#c4c0ff",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c7c4d8",
+                        "secondary": "#5b5e6a",
+                        "surface-container-highest": "#dce2f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-subtle": "#F9FAFB",
+                        "on-primary-fixed-variant": "#3622ca",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#434652",
+                        "error": "#FF6B6B",
+                        "on-surface": "#141b2b",
+                        "surface-variant": "#dce2f7",
+                        "border-base": "#E5E7EB",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "primary": "#4d41df",
+                        "on-tertiary-fixed": "#301400",
+                        "primary-container": "#675df9",
+                        "success": "#06D6A0",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#293040",
+                        "secondary-container": "#dddfee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "page-margin-mb": "24px",
+                        "page-margin-dt": "48px",
+                        "gutter": "16px",
+                        "max-width-modal": "600px",
+                        "component-height": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Outfit"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Outfit"],
+                        "label-md": ["Inter"],
+                        "thai-display": ["Sarabun"],
+                        "headline-md": ["Outfit"],
+                        "body-sm": ["Inter"],
+                        "display-hero": ["Outfit"],
+                        "headline-sm": ["Outfit"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "thai-display": ["28px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-hero": ["40px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+                    },
+                    "boxShadow": {
+                        "level-1": "0 4px 20px rgba(108, 99, 255, 0.08)",
+                        "level-2": "0 8px 40px rgba(0, 0, 0, 0.12)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .input-glow:focus {
+            box-shadow: 0 0 0 2px rgba(77, 65, 223, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-surface-subtle min-h-screen flex items-center justify-center p-page-margin-mb md:p-page-margin-dt antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+<div class="w-full max-w-md bg-surface-base rounded-[16px] shadow-level-1 overflow-hidden transition-all duration-300 hover:-translate-y-1">
+<div class="p-8 md:p-10 flex flex-col items-center">
+<!-- Mascot/Logo Area -->
+<div class="w-24 h-24 rounded-full bg-surface-container-low flex items-center justify-center mb-6">
+<!-- Using a material icon as a placeholder for the friendly owl mascot -->
+<span class="material-symbols-outlined text-[48px] text-primary" style="font-variation-settings: 'FILL' 1;">cruelty_free</span>
+</div>
+<!-- Header -->
+<div class="text-center mb-8">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Word Buddy</h1>
+<p class="font-body-sm text-body-sm text-text-muted">Welcome back! Ready to learn?</p>
+</div>
+<!-- Form -->
+<form class="w-full space-y-4">
+<div>
+<label class="sr-only" for="email">Email address</label>
+<input class="w-full h-component-height px-4 rounded-[10px] border border-border-base bg-surface-base text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary input-glow transition-all duration-150 placeholder:text-text-muted" id="email" name="email" placeholder="Email address" required="" type="email"/>
+</div>
+<div>
+<label class="sr-only" for="password">Password</label>
+<input class="w-full h-component-height px-4 rounded-[10px] border border-border-base bg-surface-base text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary input-glow transition-all duration-150 placeholder:text-text-muted" id="password" name="password" placeholder="Password" required="" type="password"/>
+</div>
+<div class="flex items-center justify-between mt-2 mb-6">
+<div class="flex items-center">
+<input class="h-4 w-4 text-primary focus:ring-primary border-border-base rounded text-primary" id="remember-me" name="remember-me" type="checkbox"/>
+<label class="ml-2 block font-label-md text-label-md text-on-surface-variant" for="remember-me">
+                            Remember me
+                        </label>
+</div>
+<div class="font-label-md text-label-md">
+<a class="text-primary hover:text-primary-container transition-colors duration-200" href="#">Forgot password?</a>
+</div>
+</div>
+<button class="w-full h-component-height bg-primary text-on-primary font-label-md text-label-md rounded-[12px] flex items-center justify-center transition-transform duration-200 hover:scale-[1.02] active:scale-95 shadow-sm" type="submit">
+                    Sign In
+                </button>
+</form>
+<!-- Divider -->
+<div class="w-full flex items-center gap-4 my-6">
+<div class="flex-1 h-px bg-border-base"></div>
+<span class="font-label-md text-label-md text-text-muted">or</span>
+<div class="flex-1 h-px bg-border-base"></div>
+</div>
+<!-- Social Login -->
+<button class="w-full h-component-height bg-surface-base border border-border-base text-on-surface font-label-md text-label-md rounded-[12px] flex items-center justify-center gap-2 transition-colors duration-200 hover:bg-surface-subtle" type="button">
+<svg class="w-5 h-5" fill="none" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+</svg>
+                Continue with Google
+            </button>
+<!-- Footer -->
+<p class="mt-8 font-body-sm text-body-sm text-text-muted">
+                Don't have an account? <a class="text-primary font-medium hover:underline transition-all" href="#">Register here</a>
+</p>
+</div>
+</div>
+</body></html>

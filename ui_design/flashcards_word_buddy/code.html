@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Word Buddy - Flashcards</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=Sarabun:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-base": "#FFFFFF",
+                        "primary-fixed": "#e3dfff",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-container": "#b65c00",
+                        "on-surface-variant": "#464555",
+                        "surface": "#f9f9ff",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-high": "#e1e8fd",
+                        "on-secondary-fixed": "#181b26",
+                        "warning": "#FFD166",
+                        "secondary-fixed-dim": "#c3c6d4",
+                        "inverse-on-surface": "#edf0ff",
+                        "text-muted": "#6B7280",
+                        "surface-dim": "#d3daef",
+                        "primary-fixed-dim": "#c4c0ff",
+                        "tertiary": "#914800",
+                        "secondary-fixed": "#e0e2f0",
+                        "outline": "#777587",
+                        "surface-container": "#e9edff",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-bright": "#f9f9ff",
+                        "on-primary-fixed": "#100069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#5f626f",
+                        "surface-tint": "#4f44e2",
+                        "inverse-primary": "#c4c0ff",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c7c4d8",
+                        "secondary": "#5b5e6a",
+                        "surface-container-highest": "#dce2f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-subtle": "#F9FAFB",
+                        "on-primary-fixed-variant": "#3622ca",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#434652",
+                        "error": "#FF6B6B",
+                        "on-surface": "#141b2b",
+                        "surface-variant": "#dce2f7",
+                        "border-base": "#E5E7EB",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "primary": "#4d41df",
+                        "on-tertiary-fixed": "#301400",
+                        "primary-container": "#675df9",
+                        "success": "#06D6A0",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#293040",
+                        "secondary-container": "#dddfee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "page-margin-mb": "24px",
+                        "page-margin-dt": "48px",
+                        "gutter": "16px",
+                        "max-width-modal": "600px",
+                        "component-height": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Outfit"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Outfit"],
+                        "label-md": ["Inter"],
+                        "thai-display": ["Sarabun"],
+                        "headline-md": ["Outfit"],
+                        "body-sm": ["Inter"],
+                        "display-hero": ["Outfit"],
+                        "headline-sm": ["Outfit"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "thai-display": ["28px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-hero": ["40px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .flashcard-transition {
+            transition: transform 0.5s ease-in-out;
+        }
+        
+        /* Level 1 Shadow */
+        .shadow-level-1 {
+            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.08);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="h-full bg-surface-container flex flex-col overflow-hidden text-on-surface font-body-lg">
+<!-- Top Bar / Progress -->
+<header class="w-full px-page-margin-mb md:px-page-margin-dt py-6 flex justify-between items-center z-10">
+<button aria-label="Close session" class="w-component-height h-component-height flex items-center justify-center rounded-full bg-surface-base shadow-level-1 text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<div class="flex-1 max-w-md mx-6">
+<div class="flex justify-between items-center mb-2 font-label-md text-label-md text-on-surface-variant">
+<span>Set: Advanced Verbs</span>
+<span>12 / 50</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-300" style="width: 24%;"></div>
+</div>
+</div>
+<button aria-label="Settings" class="w-component-height h-component-height flex items-center justify-center rounded-full bg-surface-base shadow-level-1 text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-page-margin-mb md:px-page-margin-dt relative z-0 w-full max-w-4xl mx-auto pb-24">
+<!-- Flashcard Container -->
+<div class="relative w-full max-w-md aspect-[3/4] md:aspect-square perspective-1000 cursor-pointer group" onclick="flipCard()">
+<div class="w-full h-full relative transform-style-3d flashcard-transition rounded-[16px] shadow-level-1 bg-surface-base group-hover:-translate-y-1 transition-transform duration-300" id="flashcard-inner">
+<!-- Front (English Word) -->
+<div class="absolute inset-0 w-full h-full backface-hidden rounded-[16px] bg-surface-base flex flex-col items-center justify-center p-8 border border-border-base">
+<div class="absolute top-6 right-6">
+<button aria-label="Mark for review" class="text-surface-variant hover:text-warning transition-colors">
+<span class="material-symbols-outlined" data-icon="star" data-weight="fill" style="font-variation-settings: 'FILL' 0;">star</span>
+</button>
+</div>
+<div class="mb-4 inline-flex items-center px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md">
+                        verb
+                    </div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface text-center mb-12">
+                        ubiquitous
+                    </h2>
+<div class="absolute bottom-8 flex flex-col items-center text-text-muted opacity-60">
+<span class="material-symbols-outlined mb-1" data-icon="touch_app">touch_app</span>
+<span class="font-label-md text-label-md">Tap to flip</span>
+</div>
+</div>
+<!-- Back (Definition / Translation) -->
+<div class="absolute inset-0 w-full h-full backface-hidden rotate-y-180 rounded-[16px] bg-surface-base flex flex-col items-center justify-center p-8 border border-border-base">
+<div class="absolute top-6 right-6 flex gap-2">
+<button aria-label="Listen to pronunciation" class="text-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="volume_up">volume_up</span>
+</button>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center w-full">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface text-center mb-6 text-primary">
+                            present, appearing, or found everywhere.
+                        </h2>
+<div class="w-full h-px bg-surface-variant my-6"></div>
+<div class="text-center">
+<p class="font-body-lg text-body-lg text-on-surface-variant italic mb-2">
+                                "his ubiquitous influence was felt by all the family"
+                            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Rating Buttons (Hidden initially) -->
+<div class="hidden mt-12 w-full max-w-md flex justify-between gap-4" id="rating-buttons">
+<button class="flex-1 h-14 rounded-[12px] bg-error-container text-on-error-container font-headline-sm text-headline-sm shadow-level-1 hover:scale-105 active:scale-95 transition-transform flex items-center justify-center gap-2 border border-transparent hover:border-error">
+                Missed
+            </button>
+<button class="flex-1 h-14 rounded-[12px] bg-warning/20 text-tertiary-container font-headline-sm text-headline-sm shadow-level-1 hover:scale-105 active:scale-95 transition-transform flex items-center justify-center gap-2 border border-transparent hover:border-warning">
+                Almost
+            </button>
+<button class="flex-1 h-14 rounded-[12px] bg-[#EEF0FF] text-primary font-headline-sm text-headline-sm shadow-level-1 hover:scale-105 active:scale-95 transition-transform flex items-center justify-center gap-2 border border-transparent hover:border-primary" onclick="nextCard()">
+                Got it
+            </button>
+</div>
+</main>
+<script>
+        let isFlipped = false;
+
+        function flipCard() {
+            if (isFlipped) return; // Prevent re-flipping for this simple demo
+            
+            const card = document.getElementById('flashcard-inner');
+            const ratingButtons = document.getElementById('rating-buttons');
+            
+            card.classList.add('rotate-y-180');
+            isFlipped = true;
+
+            // Show rating buttons after flip animation
+            setTimeout(() => {
+                ratingButtons.classList.remove('hidden');
+                ratingButtons.classList.add('fade-in');
+            }, 300);
+        }
+
+        function nextCard() {
+            // Placeholder for next card logic. 
+            // For now, just reset the view.
+            const card = document.getElementById('flashcard-inner');
+            const ratingButtons = document.getElementById('rating-buttons');
+            
+            // Add success bounce
+            card.classList.add('-translate-y-5');
+            setTimeout(() => card.classList.remove('-translate-y-5'), 200);
+
+            setTimeout(() => {
+                card.classList.remove('rotate-y-180');
+                ratingButtons.classList.add('hidden');
+                ratingButtons.classList.remove('fade-in');
+                isFlipped = false;
+            }, 300);
+        }
+    </script>
+</body></html>

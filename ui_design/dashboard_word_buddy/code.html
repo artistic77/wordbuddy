@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Word Buddy - Home Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=Outfit:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-base": "#FFFFFF",
+                        "primary-fixed": "#e3dfff",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-container": "#b65c00",
+                        "on-surface-variant": "#464555",
+                        "surface": "#f9f9ff",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-high": "#e1e8fd",
+                        "on-secondary-fixed": "#181b26",
+                        "warning": "#FFD166",
+                        "secondary-fixed-dim": "#c3c6d4",
+                        "inverse-on-surface": "#edf0ff",
+                        "text-muted": "#6B7280",
+                        "surface-dim": "#d3daef",
+                        "primary-fixed-dim": "#c4c0ff",
+                        "tertiary": "#914800",
+                        "secondary-fixed": "#e0e2f0",
+                        "outline": "#777587",
+                        "surface-container": "#e9edff",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-bright": "#f9f9ff",
+                        "on-primary-fixed": "#100069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#5f626f",
+                        "surface-tint": "#4f44e2",
+                        "inverse-primary": "#c4c0ff",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c7c4d8",
+                        "secondary": "#5b5e6a",
+                        "surface-container-highest": "#dce2f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-subtle": "#F9FAFB",
+                        "on-primary-fixed-variant": "#3622ca",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#434652",
+                        "error": "#FF6B6B",
+                        "on-surface": "#141b2b",
+                        "surface-variant": "#dce2f7",
+                        "border-base": "#E5E7EB",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "primary": "#4d41df",
+                        "on-tertiary-fixed": "#301400",
+                        "primary-container": "#675df9",
+                        "success": "#06D6A0",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#293040",
+                        "secondary-container": "#dddfee"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "16px": "16px"
+                    },
+                    spacing: {
+                        "page-margin-mb": "24px",
+                        "page-margin-dt": "48px",
+                        "gutter": "16px",
+                        "max-width-modal": "600px",
+                        "component-height": "48px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Outfit", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "headline-lg-mobile": ["Outfit", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "thai-display": ["Sarabun", "sans-serif"],
+                        "headline-md": ["Outfit", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "display-hero": ["Outfit", "sans-serif"],
+                        "headline-sm": ["Outfit", "sans-serif"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "thai-display": ["28px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-hero": ["40px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }]
+                    },
+                    boxShadow: {
+                        'level-1': '0 4px 20px rgba(108, 99, 255, 0.08)',
+                        'level-2': '0 8px 40px rgba(0, 0, 0, 0.12)',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-surface');
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Hide scrollbar for horizontal scroll areas but keep functionality */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-body-lg text-body-lg">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-50 bg-surface-base shadow-sm w-full">
+<div class="flex justify-between items-center w-full px-page-margin-mb md:px-page-margin-dt max-w-7xl mx-auto h-component-height">
+<!-- Brand -->
+<div class="flex items-center gap-2 scale-102 hover:scale-105 active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined text-primary text-[28px] icon-fill">school</span>
+<span class="font-headline-md text-headline-md text-on-surface">Word Buddy</span>
+</div>
+<!-- Navigation Links (Desktop) -->
+<nav class="hidden md:flex items-center gap-8 h-full">
+<a class="h-full flex items-center text-primary border-b-2 border-primary font-label-md text-label-md transition-colors duration-200" href="#">Home</a>
+<a class="h-full flex items-center text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors duration-200" href="#">My Sets</a>
+<a class="h-full flex items-center text-on-surface-variant hover:text-primary font-label-md text-label-md transition-colors duration-200" href="#">Explore</a>
+</nav>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200 scale-102 hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-border-base hover:border-primary transition-colors duration-200">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A minimalist, stylized avatar of a young user in a light-mode educational app. The portrait features a smiling student with a soft, bright background using the brand's primary purple as a subtle tint. High-key lighting, clean vector illustration style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRozAvqLGOoNF-eDpqf7HFUpA9-6HSEMTzky449XwVOmG9gk3ElBUxqQedNoXmcL8hFhS8c3osPVmiWbtnC7-NGraDBaWPfmIici_fddbGesVawMbOg7E0_4XSg_RNobHNefOPu1g7AfMLfrAcgRLBH4zKNVo6U6Tsd3Bh640n9AuxvpNAjZjAKA2qh-01jdUqgRUBhjQw23R90MkQuzB9AK84oj9RqKpRP3DVjndNo5HG8Zokg8lKpg"/>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-7xl mx-auto px-page-margin-mb md:px-page-margin-dt py-8 md:py-12 flex flex-col gap-10">
+<!-- Greeting Card -->
+<section>
+<div class="bg-surface-base rounded-16px shadow-level-1 p-8 md:p-10 flex flex-col md:flex-row justify-between items-center md:items-start gap-6 border border-white/50 relative overflow-hidden">
+<!-- Decorative subtle element -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary-fixed opacity-30 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col gap-2 z-10">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">Good morning, Nida! 🌟</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">You're on a 5-day streak. Keep up the momentum to reach your weekly goal.</p>
+</div>
+<div class="z-10 w-full md:w-auto">
+<button class="w-full md:w-auto bg-primary text-on-primary font-label-md text-label-md px-6 h-component-height rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform shadow-md">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                        Start Daily Review
+                    </button>
+</div>
+</div>
+</section>
+<!-- Stats Row -->
+<section>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Stat 1 -->
+<div class="bg-surface-base rounded-16px shadow-level-1 p-6 flex flex-col gap-3 group hover:-translate-y-1 transition-transform duration-300">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors duration-300">
+<span class="material-symbols-outlined text-[20px] icon-fill">school</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Words Learned</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-hero text-display-hero text-on-surface leading-none">1,248</span>
+<span class="font-body-sm text-body-sm text-success font-medium mb-1 flex items-center"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 12 this week</span>
+</div>
+</div>
+<!-- Stat 2 -->
+<div class="bg-surface-base rounded-16px shadow-level-1 p-6 flex flex-col gap-3 group hover:-translate-y-1 transition-transform duration-300">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-tertiary-container group-hover:bg-tertiary-container group-hover:text-on-tertiary-container transition-colors duration-300">
+<span class="material-symbols-outlined text-[20px] icon-fill">local_fire_department</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Current Streak</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-hero text-display-hero text-on-surface leading-none">5</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mb-1">Days</span>
+</div>
+</div>
+<!-- Stat 3 -->
+<div class="bg-surface-base rounded-16px shadow-level-1 p-6 flex flex-col gap-3 group hover:-translate-y-1 transition-transform duration-300">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors duration-300">
+<span class="material-symbols-outlined text-[20px] icon-fill">folder_copy</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Active Sets</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-hero text-display-hero text-on-surface leading-none">14</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mb-1">Sets</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Continue Studying -->
+<section class="flex flex-col gap-4">
+<div class="flex justify-between items-end">
+<h2 class="font-headline-md text-headline-md text-on-surface">Continue Studying</h2>
+<a class="font-label-md text-label-md text-primary hover:underline" href="#">View History</a>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar gap-6 pb-4 -mx-page-margin-mb px-page-margin-mb md:mx-0 md:px-0">
+<!-- Horizontal Card 1 -->
+<div class="min-w-[280px] md:min-w-[320px] bg-surface-base rounded-16px shadow-level-1 p-5 border border-border-base hover:border-primary/30 transition-colors cursor-pointer group flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[24px]">translate</span>
+</div>
+<span class="bg-surface-container-low text-primary font-label-md text-[11px] px-2 py-1 rounded-full">Spanish</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Advanced Verbs &amp; Tenses</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">42 terms • Last studied yesterday</p>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 mt-2">
+<div class="bg-primary h-1.5 rounded-full" style="width: 75%"></div>
+</div>
+</div>
+<!-- Horizontal Card 2 -->
+<div class="min-w-[280px] md:min-w-[320px] bg-surface-base rounded-16px shadow-level-1 p-5 border border-border-base hover:border-primary/30 transition-colors cursor-pointer group flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[24px]">science</span>
+</div>
+<span class="bg-surface-container-low text-primary font-label-md text-[11px] px-2 py-1 rounded-full">Biology</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Cellular Respiration</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">28 terms • Last studied 3 days ago</p>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 mt-2">
+<div class="bg-primary h-1.5 rounded-full" style="width: 30%"></div>
+</div>
+</div>
+<!-- Horizontal Card 3 -->
+<div class="min-w-[280px] md:min-w-[320px] bg-surface-base rounded-16px shadow-level-1 p-5 border border-border-base hover:border-primary/30 transition-colors cursor-pointer group flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[24px]">menu_book</span>
+</div>
+<span class="bg-surface-container-low text-primary font-label-md text-[11px] px-2 py-1 rounded-full">Literature</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Shakespearean Vocab</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">50 terms • Needs review</p>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 mt-2">
+<div class="bg-warning h-1.5 rounded-full" style="width: 90%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- My Sets Grid -->
+<section class="flex flex-col gap-4 pb-12">
+<div class="flex justify-between items-end mb-2">
+<h2 class="font-headline-md text-headline-md text-on-surface">My Sets</h2>
+<div class="flex gap-2">
+<button class="w-8 h-8 rounded-full bg-surface-base shadow-sm flex items-center justify-center text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-base shadow-sm flex items-center justify-center text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+<!-- Bento-style Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+<!-- Create New Card -->
+<div class="bg-primary-fixed/30 border border-primary-fixed border-dashed rounded-16px p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-primary-fixed/50 transition-colors h-full min-h-[160px]">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-[24px]">add</span>
+</div>
+<span class="font-label-md text-label-md text-primary">Create New Set</span>
+</div>
+<!-- Set Card Normal -->
+<div class="bg-surface-base rounded-16px shadow-level-1 p-5 border border-border-base hover:border-primary transition-colors cursor-pointer flex flex-col justify-between min-h-[160px] group">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-sm text-headline-sm text-on-surface line-clamp-2">JLPT N5 Vocabulary List</h3>
+<button class="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="flex items-center gap-2 mt-4">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">style</span>
+<span class="font-label-md text-label-md text-on-surface-variant">120 terms</span>
+</div>
+</div>
+<!-- Set Card Normal -->
+<div class="bg-surface-base rounded-16px shadow-level-1 p-5 border border-border-base hover:border-primary transition-colors cursor-pointer flex flex-col justify-between min-h-[160px] group">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-sm text-headline-sm text-on-surface line-clamp-2">GRE High Frequency Words</h3>
+<button class="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="flex items-center gap-2 mt-4">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">style</span>
+<span class="font-label-md text-label-md text-on-surface-variant">330 terms</span>
+</div>
+</div>
+<!-- Set Card Normal -->
+<div class="bg-surface-base rounded-16px shadow-level-1 p-5 border border-border-base hover:border-primary transition-colors cursor-pointer flex flex-col justify-between min-h-[160px] group">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-sm text-headline-sm text-on-surface line-clamp-2">Medical Terminology 101</h3>
+<button class="text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="flex items-center gap-2 mt-4">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">style</span>
+<span class="font-label-md text-label-md text-on-surface-variant">85 terms</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

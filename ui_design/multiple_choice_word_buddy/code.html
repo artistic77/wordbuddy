@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Word Buddy - Quiz</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@400;600;700&amp;family=Sarabun:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-base": "#FFFFFF",
+                    "primary-fixed": "#e3dfff",
+                    "on-tertiary-container": "#fffbff",
+                    "tertiary-container": "#b65c00",
+                    "on-surface-variant": "#464555",
+                    "surface": "#f9f9ff",
+                    "on-primary-container": "#fffbff",
+                    "surface-container-high": "#e1e8fd",
+                    "on-secondary-fixed": "#181b26",
+                    "warning": "#FFD166",
+                    "secondary-fixed-dim": "#c3c6d4",
+                    "inverse-on-surface": "#edf0ff",
+                    "text-muted": "#6B7280",
+                    "surface-dim": "#d3daef",
+                    "primary-fixed-dim": "#c4c0ff",
+                    "tertiary": "#914800",
+                    "secondary-fixed": "#e0e2f0",
+                    "outline": "#777587",
+                    "surface-container": "#e9edff",
+                    "on-tertiary-fixed-variant": "#713700",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#141b2b",
+                    "surface-container-low": "#f1f3ff",
+                    "surface-bright": "#f9f9ff",
+                    "on-primary-fixed": "#100069",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#5f626f",
+                    "surface-tint": "#4f44e2",
+                    "inverse-primary": "#c4c0ff",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#c7c4d8",
+                    "secondary": "#5b5e6a",
+                    "surface-container-highest": "#dce2f7",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-subtle": "#F9FAFB",
+                    "on-primary-fixed-variant": "#3622ca",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed": "#ffdcc6",
+                    "background": "#f9f9ff",
+                    "on-secondary-fixed-variant": "#434652",
+                    "error": "#FF6B6B",
+                    "on-surface": "#141b2b",
+                    "surface-variant": "#dce2f7",
+                    "border-base": "#E5E7EB",
+                    "tertiary-fixed-dim": "#ffb785",
+                    "primary": "#4d41df",
+                    "on-tertiary-fixed": "#301400",
+                    "primary-container": "#675df9",
+                    "success": "#06D6A0",
+                    "error-container": "#ffdad6",
+                    "inverse-surface": "#293040",
+                    "secondary-container": "#dddfee"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "page-margin-mb": "24px",
+                    "page-margin-dt": "48px",
+                    "gutter": "16px",
+                    "max-width-modal": "600px",
+                    "component-height": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Outfit"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["Outfit"],
+                    "label-md": ["Inter"],
+                    "thai-display": ["Sarabun"],
+                    "headline-md": ["Outfit"],
+                    "body-sm": ["Inter"],
+                    "display-hero": ["Outfit"],
+                    "headline-sm": ["Outfit"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "thai-display": ["28px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-hero": ["40px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Game specific animations */
+        @keyframes subtleBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .correct-anim {
+            animation: subtleBounce 0.5s ease-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .wrong-anim {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-surface-subtle text-on-surface font-body-lg min-h-screen flex flex-col items-center justify-center p-page-margin-mb md:p-page-margin-dt">
+<!-- Game Header / Progress -->
+<div class="w-full max-w-md mb-8 flex justify-between items-center">
+<button aria-label="Close Quiz" class="w-10 h-10 rounded-full bg-surface-base border border-border-base flex items-center justify-center text-secondary hover:text-primary transition-colors hover:border-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<div class="flex-1 mx-6 relative h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-300" style="width: 40%;"></div>
+</div>
+<div class="text-secondary font-label-md bg-surface-base px-3 py-1.5 rounded-full shadow-sm border border-border-base flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary-container filled" data-icon="local_fire_department">local_fire_department</span>
+<span>4/10</span>
+</div>
+</div>
+<!-- Main Game Canvas -->
+<main class="w-full max-w-md flex flex-col gap-6">
+<!-- Question Card -->
+<div class="bg-surface-base rounded-2xl shadow-[0_4px_20px_rgba(108,99,255,0.08)] p-8 md:p-10 text-center flex flex-col items-center justify-center min-h-[200px] border border-surface-container-high relative overflow-hidden group">
+<!-- Decorative subtle shape -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+<span class="font-label-md text-secondary mb-2 uppercase tracking-wider">Choose the correct translation</span>
+<h1 class="font-display-hero text-on-surface mb-2 relative z-10">Serendipity</h1>
+<!-- Context clues / Tags if any -->
+<div class="mt-4 flex gap-2">
+<span class="px-3 py-1 bg-surface-container-low text-secondary font-label-md rounded-full border border-surface-container-high">Noun</span>
+</div>
+</div>
+<!-- Options Container -->
+<div class="flex flex-col gap-3 mt-2">
+<!-- Option 1: Default State -->
+<button class="w-full bg-surface-base border border-border-base rounded-xl min-h-[64px] px-6 py-4 flex items-center justify-between group hover:border-primary hover:shadow-[0_4px_12px_rgba(108,99,255,0.08)] hover:-translate-y-0.5 transition-all duration-200">
+<div class="flex items-center gap-4 text-left">
+<span class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary font-label-md group-hover:bg-primary/10 group-hover:text-primary transition-colors">A</span>
+<span class="font-body-lg text-on-surface font-medium">A state of extreme sadness</span>
+</div>
+</button>
+<!-- Option 2: Default State -->
+<button class="w-full bg-surface-base border border-border-base rounded-xl min-h-[64px] px-6 py-4 flex items-center justify-between group hover:border-primary hover:shadow-[0_4px_12px_rgba(108,99,255,0.08)] hover:-translate-y-0.5 transition-all duration-200">
+<div class="flex items-center gap-4 text-left">
+<span class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary font-label-md group-hover:bg-primary/10 group-hover:text-primary transition-colors">B</span>
+<span class="font-body-lg text-on-surface font-medium">The occurrence of events by chance in a happy way</span>
+</div>
+</button>
+<!-- Option 3: Wrong State Example (For demonstration) -->
+<!-- Note: Usually these states are added dynamically via JS, hardcoded here for design demonstration based on prompt request -->
+<button class="w-full bg-error-container border-2 border-error rounded-xl min-h-[64px] px-6 py-4 flex items-center justify-between wrong-anim relative overflow-hidden">
+<div class="absolute inset-0 bg-error/5 pointer-events-none"></div>
+<div class="flex items-center gap-4 text-left relative z-10">
+<span class="w-8 h-8 rounded-full bg-error text-on-error flex items-center justify-center font-label-md shadow-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</span>
+<span class="font-body-lg text-on-error-container font-medium line-through opacity-80">A type of tropical fruit</span>
+</div>
+</button>
+<!-- Option 4: Correct State Example (For demonstration) -->
+<button class="w-full bg-[#E6F9F2] border-2 border-success rounded-xl min-h-[64px] px-6 py-4 flex items-center justify-between correct-anim relative overflow-hidden">
+<div class="absolute inset-0 bg-success/5 pointer-events-none"></div>
+<div class="flex items-center gap-4 text-left relative z-10">
+<span class="w-8 h-8 rounded-full bg-success text-on-primary flex items-center justify-center font-label-md shadow-sm">
+<span class="material-symbols-outlined text-[18px] filled" data-icon="check">check</span>
+</span>
+<span class="font-body-lg text-[#048A66] font-medium">A loud, sudden noise</span>
+</div>
+</button>
+</div>
+</main>
+<!-- Bottom Action (Hidden by default, shown after answering) -->
+<div class="fixed bottom-0 left-0 w-full p-page-margin-mb md:p-page-margin-dt flex justify-center bg-gradient-to-t from-surface-subtle to-transparent pointer-events-none">
+<!-- Add 'pointer-events-auto' when active -->
+<button class="w-full max-w-md bg-primary text-on-primary font-headline-sm rounded-xl h-component-height flex items-center justify-center hover:scale-[1.02] active:scale-95 transition-transform shadow-[0_4px_20px_rgba(108,99,255,0.2)] pointer-events-auto mt-8">
+            Continue
+        </button>
+</div>
+</body></html>

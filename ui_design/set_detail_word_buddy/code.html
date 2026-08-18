@@ -1,0 +1,327 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Word Buddy - Unit 3 — Animals</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=Sarabun:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-base": "#FFFFFF",
+                        "primary-fixed": "#e3dfff",
+                        "on-tertiary-container": "#fffbff",
+                        "tertiary-container": "#b65c00",
+                        "on-surface-variant": "#464555",
+                        "surface": "#f9f9ff",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-high": "#e1e8fd",
+                        "on-secondary-fixed": "#181b26",
+                        "warning": "#FFD166",
+                        "secondary-fixed-dim": "#c3c6d4",
+                        "inverse-on-surface": "#edf0ff",
+                        "text-muted": "#6B7280",
+                        "surface-dim": "#d3daef",
+                        "primary-fixed-dim": "#c4c0ff",
+                        "tertiary": "#914800",
+                        "secondary-fixed": "#e0e2f0",
+                        "outline": "#777587",
+                        "surface-container": "#e9edff",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-bright": "#f9f9ff",
+                        "on-primary-fixed": "#100069",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#5f626f",
+                        "surface-tint": "#4f44e2",
+                        "inverse-primary": "#c4c0ff",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c7c4d8",
+                        "secondary": "#5b5e6a",
+                        "surface-container-highest": "#dce2f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-subtle": "#F9FAFB",
+                        "on-primary-fixed-variant": "#3622ca",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "background": "#f9f9ff",
+                        "on-secondary-fixed-variant": "#434652",
+                        "error": "#FF6B6B",
+                        "on-surface": "#141b2b",
+                        "surface-variant": "#dce2f7",
+                        "border-base": "#E5E7EB",
+                        "tertiary-fixed-dim": "#ffb785",
+                        "primary": "#4d41df",
+                        "on-tertiary-fixed": "#301400",
+                        "primary-container": "#675df9",
+                        "success": "#06D6A0",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#293040",
+                        "secondary-container": "#dddfee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "page-margin-mb": "24px",
+                        "page-margin-dt": "48px",
+                        "gutter": "16px",
+                        "max-width-modal": "600px",
+                        "component-height": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Outfit"],
+                        "body-lg": ["Inter"],
+                        "headline-lg-mobile": ["Outfit"],
+                        "label-md": ["Inter"],
+                        "thai-display": ["Sarabun"],
+                        "headline-md": ["Outfit"],
+                        "body-sm": ["Inter"],
+                        "display-hero": ["Outfit"],
+                        "headline-sm": ["Outfit"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "thai-display": ["28px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-hero": ["40px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .vocab-row {
+            transition: all 0.2s ease-in-out;
+        }
+        .vocab-row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.08);
+            border-color: #4d41df;
+        }
+        .example-sentence {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+        }
+        .example-sentence.expanded {
+            max-height: 100px;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .rotate-icon {
+            transition: transform 0.3s ease;
+        }
+        .rotate-icon.rotated {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-lg">
+<!-- TopNavBar -->
+<nav class="bg-surface-base text-primary font-headline-md text-headline-md docked full-width top bg-surface-base shadow-sm scale-102 hover:scale-105 active:scale-95 transition-transform hidden md:flex">
+<div class="flex justify-between items-center w-full px-page-margin-dt max-w-7xl mx-auto h-component-height">
+<div class="text-headline-md font-headline-md font-bold text-on-surface">Word Buddy</div>
+<div class="flex space-x-6">
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Home</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">My Sets</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Explore</a>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A small circular avatar image showing a stylized minimalist illustration of a student wearing glasses, designed in a flat vector style with soft purple and white tones, matching an educational app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDd4odaNYIwwfiMSytvtf1L1qnraIDTz18F4Exx2bQ_tXmZKKgNH833aaGZoWsxhVms10TkdxyWLOWwcd1gPTAdCK6I4sphifsRFnCo4tLq3-Lt2VbxAiNLpOHdI2Gp-lD-9dsKNMBm_7Gt3m2WqsjsG1ZFDZDToSBsXlzDaFDnug3bCsd5lIdLXWaPLn1eNYyEWJROz3een9-eiyCDuv2n1K3b-oEvAPQo6oOTEEtzUUTBNo8EwTgV7A">
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-page-margin-mb md:px-page-margin-dt py-8 md:py-12 flex flex-col gap-8">
+<!-- Header Section -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-surface-base p-8 rounded-[16px] shadow-[0_4px_20px_rgba(108,99,255,0.08)]">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-md text-label-md">Unit 3</span>
+<span class="text-text-muted font-label-md text-label-md">• 24 Words</span>
+</div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Animals</h1>
+<p class="text-secondary font-body-lg text-body-lg">Learn common animal names in Thai, focusing on pronunciation and daily usage.</p>
+</div>
+<div class="flex items-center gap-4 w-full md:w-auto">
+<button class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#EEF0FF] text-primary px-6 h-component-height rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+                    Edit
+                </button>
+<button class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-on-primary px-8 h-component-height rounded-[12px] font-label-md text-label-md hover:scale-[1.02] transition-transform shadow-[0_4px_20px_rgba(108,99,255,0.2)]">
+<span class="material-symbols-outlined text-[20px]" data-icon="play_arrow" data-weight="fill">play_arrow</span>
+                    Study Now
+                </button>
+</div>
+</header>
+<!-- Vocabulary List -->
+<section class="flex flex-col gap-4">
+<div class="flex justify-between items-center mb-2 px-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Vocabulary List</h2>
+<div class="flex gap-2">
+<button class="p-2 text-secondary hover:text-primary rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+<button class="p-2 text-secondary hover:text-primary rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" data-icon="sort">sort</span>
+</button>
+</div>
+</div>
+<!-- List Container -->
+<div class="flex flex-col gap-3">
+<!-- Vocab Item 1 -->
+<div class="vocab-row bg-surface-base border border-border-base rounded-[16px] overflow-hidden cursor-pointer" onclick="toggleExample(this)">
+<div class="p-4 md:p-6 flex items-center justify-between gap-4">
+<div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Dog</span>
+<span class="text-text-muted font-body-sm text-body-sm">ด็อก</span>
+</div>
+<div class="flex flex-col">
+<span class="font-thai-display text-thai-display text-primary">หมา</span>
+<span class="text-text-muted font-body-sm text-body-sm">mǎa</span>
+</div>
+<div class="flex items-center justify-start md:justify-end">
+<span class="bg-[#E6F4EA] text-[#137333] px-3 py-1 rounded-full font-label-md text-label-md">Noun</span>
+</div>
+</div>
+<button class="p-2 text-secondary hover:text-primary rounded-full transition-colors rotate-icon">
+<span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<div class="example-sentence bg-surface-subtle px-4 md:px-6 border-t border-border-base">
+<div class="flex flex-col gap-2">
+<p class="font-thai-display text-[20px] text-on-surface">ฉันมีหมาหนึ่งตัว</p>
+<p class="font-body-sm text-body-sm text-secondary">I have one dog.</p>
+</div>
+</div>
+</div>
+<!-- Vocab Item 2 -->
+<div class="vocab-row bg-surface-base border border-border-base rounded-[16px] overflow-hidden cursor-pointer" onclick="toggleExample(this)">
+<div class="p-4 md:p-6 flex items-center justify-between gap-4">
+<div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Cat</span>
+<span class="text-text-muted font-body-sm text-body-sm">แคท</span>
+</div>
+<div class="flex flex-col">
+<span class="font-thai-display text-thai-display text-primary">แมว</span>
+<span class="text-text-muted font-body-sm text-body-sm">mɛɛw</span>
+</div>
+<div class="flex items-center justify-start md:justify-end">
+<span class="bg-[#E6F4EA] text-[#137333] px-3 py-1 rounded-full font-label-md text-label-md">Noun</span>
+</div>
+</div>
+<button class="p-2 text-secondary hover:text-primary rounded-full transition-colors rotate-icon">
+<span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<div class="example-sentence bg-surface-subtle px-4 md:px-6 border-t border-border-base">
+<div class="flex flex-col gap-2">
+<p class="font-thai-display text-[20px] text-on-surface">แมวชอบนอน</p>
+<p class="font-body-sm text-body-sm text-secondary">Cats like to sleep.</p>
+</div>
+</div>
+</div>
+<!-- Vocab Item 3 -->
+<div class="vocab-row bg-surface-base border border-border-base rounded-[16px] overflow-hidden cursor-pointer" onclick="toggleExample(this)">
+<div class="p-4 md:p-6 flex items-center justify-between gap-4">
+<div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Bird</span>
+<span class="text-text-muted font-body-sm text-body-sm">เบิร์ด</span>
+</div>
+<div class="flex flex-col">
+<span class="font-thai-display text-thai-display text-primary">นก</span>
+<span class="text-text-muted font-body-sm text-body-sm">nók</span>
+</div>
+<div class="flex items-center justify-start md:justify-end">
+<span class="bg-[#E6F4EA] text-[#137333] px-3 py-1 rounded-full font-label-md text-label-md">Noun</span>
+</div>
+</div>
+<button class="p-2 text-secondary hover:text-primary rounded-full transition-colors rotate-icon">
+<span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<div class="example-sentence bg-surface-subtle px-4 md:px-6 border-t border-border-base">
+<div class="flex flex-col gap-2">
+<p class="font-thai-display text-[20px] text-on-surface">นกบินบนฟ้า</p>
+<p class="font-body-sm text-body-sm text-secondary">Birds fly in the sky.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-base text-secondary font-label-md text-label-md full-width bottom border-t border-border-base flat no shadows opacity-80 hover:opacity-100 transition-opacity mt-auto hidden md:flex">
+<div class="w-full py-8 px-page-margin-dt flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto">
+<div class="font-headline-sm font-bold text-on-surface mb-4 md:mb-0">© 2024 Word Buddy</div>
+<div class="flex space-x-6">
+<a class="text-text-muted hover:text-primary underline transition-colors" href="#">Privacy Policy</a>
+<a class="text-text-muted hover:text-primary underline transition-colors" href="#">Terms of Service</a>
+<a class="text-text-muted hover:text-primary underline transition-colors" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface-base border-t border-border-base flex justify-around items-center h-[64px] z-50 pb-safe">
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-primary" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="home">home</span>
+<span class="font-label-md text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-primary" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="folder" data-weight="fill">folder</span>
+<span class="font-label-md text-[10px] font-bold">My Sets</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-primary" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="search">search</span>
+<span class="font-label-md text-[10px]">Explore</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-primary" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="person">person</span>
+<span class="font-label-md text-[10px]">Profile</span>
+</a>
+</nav>
+<script>
+        function toggleExample(element) {
+            const exampleDiv = element.querySelector('.example-sentence');
+            const icon = element.querySelector('.rotate-icon');
+            
+            exampleDiv.classList.toggle('expanded');
+            icon.classList.toggle('rotated');
+            
+            // Optional: close others
+            const allRows = document.querySelectorAll('.vocab-row');
+            allRows.forEach(row => {
+                if(row !== element) {
+                    row.querySelector('.example-sentence').classList.remove('expanded');
+                    row.querySelector('.rotate-icon').classList.remove('rotated');
+                }
+            });
+        }
+    </script>
+
+
+</body></html>
