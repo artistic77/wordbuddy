@@ -274,57 +274,57 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-text-primary/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-2xl my-8 max-h-[90vh] flex flex-col">
-        <Card className="p-6 sm:p-8 shadow-modal border-primary/20 relative flex flex-col flex-1 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-text-primary/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-2xl my-auto max-h-[92vh] flex flex-col">
+        <Card className="p-5 sm:p-7 shadow-modal border-primary/20 relative flex flex-col flex-1 max-h-[92vh] overflow-hidden bg-white">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
+            className="absolute top-5 right-5 p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface transition-colors z-10"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
 
-          {/* Modal Header */}
-          <div className="mb-4">
-            <h2 className="text-2xl font-outfit font-bold text-text-primary">Add Vocabulary</h2>
+          {/* Modal Header (Fixed) */}
+          <div className="mb-3 pr-8 flex-shrink-0">
+            <h2 className="text-xl sm:text-2xl font-outfit font-bold text-text-primary">Add Vocabulary</h2>
             <p className="text-xs text-text-secondary mt-0.5">
               Add individual words or snap a photo with automatic <span className="font-semibold text-primary">คำอ่านภาษาไทย</span> guides!
             </p>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 p-1 bg-surface rounded-2xl border border-border mb-4">
+          {/* Tabs (Fixed) */}
+          <div className="flex gap-2 p-1 bg-surface rounded-2xl border border-border mb-3 flex-shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('type')}
-              className={`flex-1 py-2 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                 activeTab === 'type'
                   ? 'bg-white text-primary shadow-sm'
                   : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-primary" />
               Type Single Word
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('photo')}
-              className={`flex-1 py-2 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                 activeTab === 'photo'
                   ? 'bg-white text-primary shadow-sm'
                   : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              <Camera className="w-4 h-4" />
+              <Camera className="w-4 h-4 text-primary" />
               Photo / Multi-Word Scan
             </button>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-secondary-light border border-secondary/20 text-xs text-secondary">
+            <div className="mb-3 p-3 rounded-xl bg-secondary-light border border-secondary/20 text-xs text-secondary flex-shrink-0">
               {error}
             </div>
           )}
@@ -450,53 +450,55 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                                   onChange={(e) =>
                                     handleUpdateDraftWord(item.id, 'word_en', e.target.value)
                                   }
-                                  className="font-outfit font-bold text-base text-primary bg-transparent border-b border-transparent hover:border-primary/40 focus:border-primary focus:outline-none px-1"
+                                  className="font-bold text-sm text-text-primary bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none px-1 py-0.5"
                                 />
-                                <button
-                                  type="button"
-                                  onClick={() => speakWord(item.word_en)}
-                                  className="text-text-secondary hover:text-primary"
-                                >
-                                  <Volume2 className="w-3.5 h-3.5" />
-                                </button>
                                 <Badge pos={item.part_of_speech} size="sm">
                                   {item.part_of_speech}
                                 </Badge>
+                                <button
+                                  type="button"
+                                  onClick={() => speakWord(item.word_en)}
+                                  className="text-text-secondary hover:text-primary transition-colors"
+                                >
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
 
-                              {/* Reading Guide + Thai Meaning */}
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-primary font-sarabun bg-primary-light px-2 py-0.5 rounded-md">
-                                  อ่านว่า:
-                                </span>
-                                <input
-                                  type="text"
-                                  value={item.reading_th || ''}
-                                  onChange={(e) =>
-                                    handleUpdateDraftWord(item.id, 'reading_th', e.target.value)
-                                  }
-                                  placeholder="คำอ่าน (e.g. แบท)"
-                                  className="text-xs font-sarabun font-semibold text-primary bg-transparent border-b border-transparent hover:border-primary/40 focus:border-primary focus:outline-none px-1 w-28"
-                                />
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                                <div className="flex items-center gap-1 bg-surface px-2.5 py-1 rounded-lg border border-border/60">
+                                  <span className="text-[11px] font-bold text-primary font-sarabun flex-shrink-0">
+                                    อ่านว่า:
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={item.reading_th || ''}
+                                    placeholder="คำอ่านไทย"
+                                    onChange={(e) =>
+                                      handleUpdateDraftWord(item.id, 'reading_th', e.target.value)
+                                    }
+                                    className="text-xs text-primary font-semibold font-sarabun bg-transparent focus:outline-none w-full"
+                                  />
+                                </div>
+
                                 <input
                                   type="text"
                                   value={item.word_th}
+                                  placeholder="ความหมายภาษาไทย"
                                   onChange={(e) =>
                                     handleUpdateDraftWord(item.id, 'word_th', e.target.value)
                                   }
-                                  placeholder="คำแปลภาษาไทย"
-                                  className="text-xs font-sarabun text-text-primary bg-transparent border-b border-transparent hover:border-primary/40 focus:border-primary focus:outline-none px-1 flex-1"
+                                  className="text-xs text-text-secondary font-sarabun bg-surface px-2.5 py-1 rounded-lg border border-border/60 focus:outline-none focus:border-primary w-full"
                                 />
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1 flex-shrink-0">
+                          <div className="flex items-center gap-1">
                             <button
                               type="button"
                               onClick={() => handleToggleExpandWord(item.id)}
-                              className="p-1 text-text-secondary hover:text-primary"
-                              title="Expand/Edit details"
+                              className="p-1 text-text-secondary hover:text-primary rounded-lg"
+                              title="Edit example sentences"
                             >
                               {item.isExpanded ? (
                                 <ChevronUp className="w-4 h-4" />
@@ -507,7 +509,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                             <button
                               type="button"
                               onClick={() => handleDeleteDraftWord(item.id)}
-                              className="p-1 text-text-secondary hover:text-secondary"
+                              className="p-1 text-secondary/70 hover:text-secondary rounded-lg"
                               title="Remove word"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -515,28 +517,30 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                           </div>
                         </div>
 
+                        {/* Expandable Example Sentence Details */}
                         {item.isExpanded && (
-                          <div className="mt-3 pt-3 border-t border-border space-y-2 text-xs animate-fade-in">
+                          <div className="mt-3 pt-3 border-t border-border/80 space-y-2 text-xs">
                             <div>
-                              <label className="font-semibold text-text-secondary block mb-1">
+                              <label className="font-semibold text-text-secondary block mb-0.5">
                                 Part of Speech
                               </label>
-                              <div className="flex flex-wrap gap-1.5">
+                              <select
+                                value={item.part_of_speech}
+                                onChange={(e) =>
+                                  handleUpdateDraftWord(
+                                    item.id,
+                                    'part_of_speech',
+                                    e.target.value as PartOfSpeech
+                                  )
+                                }
+                                className="p-1.5 rounded-lg border border-border bg-white text-xs"
+                              >
                                 {posOptions.map((p) => (
-                                  <button
-                                    key={p}
-                                    type="button"
-                                    onClick={() => handleUpdateDraftWord(item.id, 'part_of_speech', p)}
-                                    className={`text-[11px] px-2 py-0.5 rounded-full border ${
-                                      item.part_of_speech === p
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'bg-surface text-text-secondary border-border'
-                                    }`}
-                                  >
+                                  <option key={p} value={p}>
                                     {p}
-                                  </button>
+                                  </option>
                                 ))}
-                              </div>
+                              </select>
                             </div>
 
                             <div>
@@ -572,7 +576,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                  <div className="flex items-center justify-between pt-3 border-t border-border flex-shrink-0">
                     <Button
                       type="button"
                       variant="ghost"
@@ -600,155 +604,158 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
               )}
             </div>
           ) : (
-            /* Single Word Typing Form */
-            <form onSubmit={handleSingleSave} className="space-y-4">
-              <div className="flex gap-2">
-                <div className="flex-1">
+            /* Single Word Typing Form - Flex Column with Scrollable Form Body and Fixed Footer */
+            <form onSubmit={handleSingleSave} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1.5 pb-2">
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      label="English Word / Phrase"
+                      placeholder="e.g. reading, bat, play"
+                      value={wordEn}
+                      onChange={(e) => setWordEn(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="md"
+                      onClick={handleTranslate}
+                      isLoading={isTranslating}
+                      className="h-11"
+                    >
+                      <Sparkles className="w-4 h-4 mr-1 text-primary" />
+                      Translate
+                    </Button>
+                  </div>
+                </div>
+
+                {wordEn && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => speakWord(wordEn)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary-light text-primary hover:bg-primary-light/80 transition-colors"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      Pronounce English
+                    </button>
+                  </div>
+                )}
+
+                {/* Thai Phonetic Reading (คำอ่าน) */}
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1">
+                    Thai Pronunciation / คำอ่านภาษาไทย (เช่น อ่านว่า แบท)
+                  </label>
+                  <div className="flex rounded-input border border-border overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 bg-white transition-all">
+                    <span className="inline-flex items-center px-3.5 bg-primary-light text-primary text-sm font-bold font-sarabun border-r border-border/80 flex-shrink-0 select-none">
+                      อ่านว่า:
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="e.g. แบท, รีดดิ้ง, เพลย์"
+                      className="w-full h-11 px-3.5 bg-transparent text-primary font-sarabun text-base font-semibold focus:outline-none placeholder:text-text-muted"
+                      value={readingTh}
+                      onChange={(e) => setReadingTh(e.target.value)}
+                    />
+                    {readingTh && (
+                      <button
+                        type="button"
+                        onClick={() => speakWord(readingTh, 'th')}
+                        className="px-3 text-text-secondary hover:text-primary transition-colors border-l border-border/80 flex items-center"
+                        title="ฟังเสียงอ่านภาษาไทย"
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Thai Meaning */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-text-primary">
+                      Thai Meaning (ความหมายภาษาไทย)
+                    </label>
+                    {wordTh && (
+                      <button
+                        type="button"
+                        onClick={handleCopyThai}
+                        className="text-xs text-text-secondary hover:text-primary flex items-center gap-1"
+                      >
+                        {copied ? <Check className="w-3 h-3 text-accent-green" /> : <Copy className="w-3 h-3" />}
+                        {copied ? 'Copied' : 'Copy'}
+                      </button>
+                    )}
+                  </div>
                   <Input
-                    label="English Word / Phrase"
-                    placeholder="e.g. reading, bat, play"
-                    value={wordEn}
-                    onChange={(e) => setWordEn(e.target.value)}
+                    placeholder="e.g. การอ่านหนังสือ, เล่น"
+                    className="font-sarabun text-base"
+                    value={wordTh}
+                    onChange={(e) => setWordTh(e.target.value)}
                     required
-                    autoFocus
                   />
                 </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="md"
-                    onClick={handleTranslate}
-                    isLoading={isTranslating}
-                    className="h-11"
-                  >
-                    <Sparkles className="w-4 h-4 mr-1 text-primary" />
-                    Translate
-                  </Button>
-                </div>
-              </div>
 
-              {wordEn && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => speakWord(wordEn)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary-light text-primary hover:bg-primary-light/80 transition-colors"
-                  >
-                    <Volume2 className="w-3.5 h-3.5" />
-                    Pronounce English
-                  </button>
-                </div>
-              )}
-
-              {/* Thai Phonetic Reading (คำอ่าน) */}
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  Thai Pronunciation / คำอ่านภาษาไทย (เช่น อ่านว่า แบท)
-                </label>
-                <div className="flex rounded-input border border-border overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 bg-white transition-all">
-                  <span className="inline-flex items-center px-3.5 bg-primary-light text-primary text-sm font-bold font-sarabun border-r border-border/80 flex-shrink-0 select-none">
-                    อ่านว่า:
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="e.g. แบท, รีดดิ้ง, เพลย์"
-                    className="w-full h-11 px-3.5 bg-transparent text-primary font-sarabun text-base font-semibold focus:outline-none placeholder:text-text-muted"
-                    value={readingTh}
-                    onChange={(e) => setReadingTh(e.target.value)}
-                  />
-                  {readingTh && (
-                    <button
-                      type="button"
-                      onClick={() => speakWord(readingTh, 'th')}
-                      className="px-3 text-text-secondary hover:text-primary transition-colors border-l border-border/80 flex items-center"
-                      title="ฟังเสียงอ่านภาษาไทย"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Thai Meaning */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-text-primary">
-                    Thai Meaning (ความหมายภาษาไทย)
-                  </label>
-                  {wordTh && (
-                    <button
-                      type="button"
-                      onClick={handleCopyThai}
-                      className="text-xs text-text-secondary hover:text-primary flex items-center gap-1"
-                    >
-                      {copied ? <Check className="w-3 h-3 text-accent-green" /> : <Copy className="w-3 h-3" />}
-                      {copied ? 'Copied' : 'Copy'}
-                    </button>
-                  )}
-                </div>
-                <Input
-                  placeholder="e.g. การอ่านหนังสือ, เล่น"
-                  className="font-sarabun text-base"
-                  value={wordTh}
-                  onChange={(e) => setWordTh(e.target.value)}
-                  required
-                />
-              </div>
-
-              {/* POS Chips */}
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  Part of Speech (ชนิดของคำ)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {posOptions.map((pos) => (
-                    <button
-                      type="button"
-                      key={pos}
-                      onClick={() => setPartOfSpeech(pos)}
-                      className={`cursor-pointer transition-transform active:scale-95 ${
-                        partOfSpeech === pos ? 'ring-2 ring-primary ring-offset-1 scale-105' : 'opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <Badge pos={pos} size="md">
-                        {pos}
-                      </Badge>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Example Sentences */}
-              <div className="space-y-3 pt-2">
+                {/* POS Chips */}
                 <div>
-                  <label className="block text-xs font-semibold text-text-secondary mb-1">
-                    English Example Sentence
+                  <label className="block text-sm font-medium text-text-primary mb-2">
+                    Part of Speech (ชนิดของคำ)
                   </label>
-                  <textarea
-                    rows={2}
-                    className="w-full p-2.5 rounded-input bg-white border border-border text-text-primary text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
-                    placeholder="e.g. Reading helps students learn new English words every day."
-                    value={exampleEn}
-                    onChange={(e) => setExampleEn(e.target.value)}
-                  />
+                  <div className="flex flex-wrap gap-2">
+                    {posOptions.map((pos) => (
+                      <button
+                        type="button"
+                        key={pos}
+                        onClick={() => setPartOfSpeech(pos)}
+                        className={`cursor-pointer transition-transform active:scale-95 ${
+                          partOfSpeech === pos ? 'ring-2 ring-primary ring-offset-1 scale-105' : 'opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <Badge pos={pos} size="md">
+                          {pos}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary mb-1">
-                    Thai Example Sentence (ประโยคตัวอย่างภาษาไทย)
-                  </label>
-                  <textarea
-                    rows={2}
-                    className="w-full p-2.5 rounded-input bg-white border border-border text-text-primary text-xs font-sarabun focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
-                    placeholder="e.g. การอ่านช่วยให้นักเรียนได้เรียนรู้คำศัพท์ใหม่ๆ ทุกวัน"
-                    value={exampleTh}
-                    onChange={(e) => setExampleTh(e.target.value)}
-                  />
+                {/* Example Sentences */}
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1">
+                      English Example Sentence
+                    </label>
+                    <textarea
+                      rows={2}
+                      className="w-full p-2.5 rounded-input bg-white border border-border text-text-primary text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
+                      placeholder="e.g. Reading helps students learn new English words every day."
+                      value={exampleEn}
+                      onChange={(e) => setExampleEn(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1">
+                      Thai Example Sentence (ประโยคตัวอย่างภาษาไทย)
+                    </label>
+                    <textarea
+                      rows={2}
+                      className="w-full p-2.5 rounded-input bg-white border border-border text-text-primary text-xs font-sarabun focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
+                      placeholder="e.g. การอ่านช่วยให้นักเรียนได้เรียนรู้คำศัพท์ใหม่ๆ ทุกวัน"
+                      value={exampleTh}
+                      onChange={(e) => setExampleTh(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              {/* Action Buttons (Fixed / Sticky Footer) */}
+              <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3 flex-shrink-0">
                 <Button type="button" variant="ghost" size="md" onClick={onClose}>
                   Cancel
                 </Button>
