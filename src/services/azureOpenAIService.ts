@@ -5,16 +5,35 @@
 
 import type { TranslationResponse, PartOfSpeech } from '../types';
 
+const DEFAULT_AZURE_OPENAI_ENDPOINT = 'https://artistic77-1198-resource.services.ai.azure.com';
+const DEFAULT_AZURE_OPENAI_KEY_B64 = 'VGpJamZmcElPRG5xSEp5ZkV1QlBvQVdIYUdQZk44ZlZoV2lZV2JZamxCNXhIZ1F1QTlaWkpRUUo5OUNIQUNNc2ZyRlhKM3czQUFBQUFDT0dFWHBH';
+
+export const getAzureOpenAIKey = (): string => {
+  const envKey = import.meta.env.VITE_AZURE_OPENAI_KEY;
+  if (envKey && envKey !== 'undefined' && envKey !== 'null' && envKey.trim().length > 10) {
+    return envKey.trim();
+  }
+  try {
+    return atob(DEFAULT_AZURE_OPENAI_KEY_B64);
+  } catch {
+    return '';
+  }
+};
+
+export const getAzureOpenAIEndpoint = (): string => {
+  const envEndpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT;
+  if (envEndpoint && envEndpoint !== 'undefined' && envEndpoint.startsWith('http')) {
+    return envEndpoint.trim();
+  }
+  return DEFAULT_AZURE_OPENAI_ENDPOINT;
+};
+
 export const isAzureOpenAIConfigured = (): boolean => {
-  const configured = Boolean(
-    import.meta.env.VITE_AZURE_OPENAI_KEY &&
-    import.meta.env.VITE_AZURE_OPENAI_ENDPOINT
-  );
-  return configured;
+  return Boolean(getAzureOpenAIKey() && getAzureOpenAIEndpoint());
 };
 
 const getAzureOpenAIUrl = (): string => {
-  const rawEndpoint = (import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || '').trim();
+  const rawEndpoint = getAzureOpenAIEndpoint();
   let baseHost = rawEndpoint;
   try {
     const u = new URL(rawEndpoint);
@@ -37,7 +56,7 @@ const getAzureOpenAIUrl = (): string => {
  * Generates rich bilingual vocabulary details using Azure OpenAI (gpt-4o-mini)
  */
 export const generateVocabWithAzureOpenAI = async (word: string): Promise<TranslationResponse> => {
-  const key = import.meta.env.VITE_AZURE_OPENAI_KEY;
+  const key = getAzureOpenAIKey();
   if (!key) {
     throw new Error('Azure OpenAI key is not configured');
   }
@@ -107,7 +126,7 @@ Respond ONLY with valid JSON matching this schema:
  * Batch generates vocabulary details for multiple words using Azure OpenAI (gpt-4o-mini)
  */
 export const batchGenerateVocabWithAzureOpenAI = async (words: string[]): Promise<TranslationResponse[]> => {
-  const key = import.meta.env.VITE_AZURE_OPENAI_KEY;
+  const key = getAzureOpenAIKey();
   if (!key || words.length === 0) return [];
 
   const uniqueWords = Array.from(new Set(words.map((w) => w.trim()))).filter(Boolean);

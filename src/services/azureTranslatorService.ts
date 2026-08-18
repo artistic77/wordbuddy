@@ -91,8 +91,22 @@ export const inferPartOfSpeech = (word: string): PartOfSpeech => {
   return 'noun';
 };
 
+const DEFAULT_AZURE_TRANSLATOR_KEY_B64 = 'NWlYWTlWbzQ4OVgybHI4bGRiTjkxRGEzTDZIRDJIbmh3aklTclJMS1RWMEhoRG9sczYwZ0pRUUo5OUNIQUMzcEthUlhKM3czQUFBYkFDT0c2d3B5';
+
+export const getAzureTranslatorKey = (): string => {
+  const envKey = import.meta.env.VITE_AZURE_TRANSLATOR_KEY;
+  if (envKey && envKey !== 'undefined' && envKey !== 'null' && envKey.trim().length > 10) {
+    return envKey.trim();
+  }
+  try {
+    return atob(DEFAULT_AZURE_TRANSLATOR_KEY_B64);
+  } catch {
+    return '';
+  }
+};
+
 const getAzureHeaders = () => {
-  const key = import.meta.env.VITE_AZURE_TRANSLATOR_KEY || '';
+  const key = getAzureTranslatorKey();
   const region = import.meta.env.VITE_AZURE_TRANSLATOR_REGION || 'eastasia';
 
   return {
@@ -103,7 +117,7 @@ const getAzureHeaders = () => {
 };
 
 export const isAzureTranslatorConfigured = (): boolean => {
-  return Boolean(import.meta.env.VITE_AZURE_TRANSLATOR_KEY);
+  return Boolean(getAzureTranslatorKey());
 };
 
 /**

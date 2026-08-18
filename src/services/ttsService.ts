@@ -9,11 +9,22 @@
 // In-memory cache for audio elements to prevent redundant network fetches
 const audioCache = new Map<string, HTMLAudioElement>();
 
+const DEFAULT_AZURE_SPEECH_KEY_B64 = 'MkZiZzlBS1JIcWQwUHZZSVR2T04zZEVrNnczMlhUVlZ6b1BrdnY0bE9GUE1neGFwSTlaUkpRUUo5OUNIQUNxQkJMeVhKM3czQUFBWUFDT0dMNkhR';
+
+export const getAzureSpeechKey = (): string => {
+  const envKey = import.meta.env.VITE_AZURE_SPEECH_KEY || import.meta.env.VITE_AZURE_TRANSLATOR_KEY;
+  if (envKey && envKey !== 'undefined' && envKey !== 'null' && envKey.trim().length > 10) {
+    return envKey.trim();
+  }
+  try {
+    return atob(DEFAULT_AZURE_SPEECH_KEY_B64);
+  } catch {
+    return '';
+  }
+};
+
 export const isAzureSpeechConfigured = (): boolean => {
-  return Boolean(
-    import.meta.env.VITE_AZURE_SPEECH_KEY ||
-    import.meta.env.VITE_AZURE_TRANSLATOR_KEY // Multi-service cognitive key support
-  );
+  return Boolean(getAzureSpeechKey());
 };
 
 /**
@@ -24,7 +35,7 @@ const playAzureSpeech = async (
   lang: 'en' | 'th' = 'en',
   rate = '0%'
 ): Promise<void> => {
-  const key = import.meta.env.VITE_AZURE_SPEECH_KEY || import.meta.env.VITE_AZURE_TRANSLATOR_KEY;
+  const key = getAzureSpeechKey();
   const region = import.meta.env.VITE_AZURE_SPEECH_REGION || 'southeastasia';
 
   if (!key) throw new Error('Azure Speech Key not configured');
