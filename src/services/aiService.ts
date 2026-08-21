@@ -3,11 +3,15 @@ import { parseImageWithOCRSpace, tokenizeVocabWords } from './ocrSpaceService';
 import {
   generateVocabWithAzureOpenAI,
   batchGenerateVocabWithAzureOpenAI,
+  extractVocabListWithAzureVision,
   isAzureOpenAIConfigured,
+  type ExtractedVocabSheet,
 } from './azureOpenAIService';
 import { translateWithAzure, batchTranslateWithAzure, isAzureTranslatorConfigured } from './azureTranslatorService';
 import { getThaiPhonetic } from './phoneticService';
 import type { PartOfSpeech, TranslationResponse } from '../types';
+
+export type { ExtractedVocabSheet };
 
 // Built-in educational bilingual dictionary for instant responses & offline resilience
 const EDUCATIONAL_DICTIONARY: Record<string, TranslationResponse> = {
@@ -262,30 +266,47 @@ export const batchTranslateWords = async (words: string[]): Promise<TranslationR
 };
 
 /**
- * Extracts multiple English vocabulary words from an uploaded image / photo
+ * Extracts vocabulary words and sheet metadata (title/topic) from an uploaded image / photo
+ * using Multimodal Vision AI (Azure OpenAI GPT-4.1-mini Vision Priority 1).
  */
-export const extractMultipleWordsFromImage = async (
+export const extractVocabSheetFromImage = async (
   base64Image: string,
   mimeType = 'image/jpeg'
-): Promise<string[]> => {
-  // 1. Try OCR.Space API (Engine 2)
-  try {
-    const parsedText = await parseImageWithOCRSpace(base64Image, 'eng', 2);
-    if (parsedText && parsedText.trim()) {
-      const words = tokenizeVocabWords(parsedText);
-      if (words.length > 0) {
-        return words;
+): Promise<ExtractedVocabSheet> => {
+  // 1. Primary: Microsoft Azure OpenAI Vision (gpt-4.1-mini)
+  if (isAzureOpenAIConfigured()) {
+    try {
+      console.log('[AI Service] Calling Azure OpenAI Vision for worksheet image analysis...');
+      const sheetResult = await extractVocabListWithAzureVision(base64Image, mimeType);
+      if (sheetResult.words && sheetResult.words.length > 0) {
+        console.log(`[AI Service] Azure OpenAI Vision successfully extracted ${sheetResult.words.length} words:`, sheetResult);
+        return sheetResult;
       }
+    } catch (err) {
+      console.warn('Azure OpenAI Vision extraction failed, trying Gemini Vision fallback:', err);
     }
-  } catch (err) {
-    console.warn('OCR.Space extraction failed, falling back to Vision AI:', err);
   }
 
-  // 2. Try Gemini Vision if OCR.Space fallback is needed
+  // 2. Secondary: Direct Gemini Vision API
   const directApiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (directApiKey && directApiKey !== 'your_gemini_api_key') {
     try {
-      const prompt = `Extract all distinct English vocabulary words visible on this page. Return ONLY a JSON array of strings (e.g. ["bat", "cat", "reading", "play"]).`;
+      console.log('[AI Service] Calling Gemini Vision fallback...');
+      const prompt = `You are an expert AI vision assistant specializing in analyzing educational English worksheets, spelling word lists, textbooks, flashcards, and student study sheets.
+
+Your task:
+1. Identify and extract all TARGET English vocabulary words from the image.
+2. Ignore noise, row numbers, indices (e.g. 1, 2, 3, 4, 11, 12...), page numbers, dates (e.g. "Date: 20/8/26", "Spelling Test Day: 3/9/26"), instructions, and column headers.
+3. Preserve correct sequential reading order (e.g., if there are multiple columns numbered 1 to 10 on the left and 11 to 20 on the right, return them in order 1, 2, 3, ... 20).
+4. Identify any worksheet or list title/topic if visible (e.g., "Spelling Word List (6)", "Science Unit 3", etc.).
+5. Ensure words are clean, lower-cased/standard-cased without leading/trailing numbers or punctuation.
+
+Respond ONLY with valid JSON:
+{
+  "title": "Detected Title or empty string",
+  "words": ["word1", "word2", "word3"]
+}`;
+
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${directApiKey}`,
         {
@@ -312,18 +333,40 @@ export const extractMultipleWordsFromImage = async (
 
       if (res.ok) {
         const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
         const parsed = JSON.parse(text.trim());
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((w: string) => String(w).trim()).filter(Boolean);
+        const words: string[] = Array.isArray(parsed.words)
+          ? parsed.words.map((w: any) => String(w).trim()).filter(Boolean)
+          : Array.isArray(parsed)
+          ? parsed.map((w: any) => String(w).trim()).filter(Boolean)
+          : [];
+        if (words.length > 0) {
+          return {
+            title: parsed.title ? String(parsed.title).trim() : undefined,
+            words,
+          };
         }
       }
     } catch (err) {
-      console.warn('Direct Gemini multi-word OCR failed:', err);
+      console.warn('Direct Gemini Vision extraction failed:', err);
     }
   }
 
-  // 3. Supabase Edge Function fallback
+  // 3. Tertiary: OCR.Space API as fallback
+  try {
+    console.log('[AI Service] Calling OCR.Space as fallback...');
+    const parsedText = await parseImageWithOCRSpace(base64Image, 'eng', 2);
+    if (parsedText && parsedText.trim()) {
+      const words = tokenizeVocabWords(parsedText);
+      if (words.length > 0) {
+        return { words };
+      }
+    }
+  } catch (err) {
+    console.warn('OCR.Space extraction failed:', err);
+  }
+
+  // 4. Supabase Edge Function fallback
   if (isSupabaseConfigured) {
     try {
       const { data, error } = await supabase.functions.invoke('ai', {
@@ -332,19 +375,34 @@ export const extractMultipleWordsFromImage = async (
       if (!error && data?.text) {
         const raw = data.text.trim();
         if (raw.startsWith('[') && raw.endsWith(']')) {
-          return JSON.parse(raw);
+          return { words: JSON.parse(raw) };
         }
-        return raw.split(/[\n,]+/).map((w: string) => w.trim()).filter(Boolean);
+        const words = raw.split(/[\n,]+/).map((w: string) => w.trim()).filter(Boolean);
+        return { words };
       }
     } catch (err) {
       console.warn('Edge Function OCR failed:', err);
     }
   }
 
-  return ['bat', 'cat', 'reading', 'play', 'topology', 'premium'];
+  return {
+    words: ['bat', 'cat', 'reading', 'play', 'topology', 'premium'],
+  };
+};
+
+/**
+ * Extracts multiple English vocabulary words from an uploaded image / photo
+ */
+export const extractMultipleWordsFromImage = async (
+  base64Image: string,
+  mimeType = 'image/jpeg'
+): Promise<string[]> => {
+  const result = await extractVocabSheetFromImage(base64Image, mimeType);
+  return result.words;
 };
 
 export const extractTextFromImage = async (base64Image: string, mimeType = 'image/jpeg'): Promise<string> => {
   const words = await extractMultipleWordsFromImage(base64Image, mimeType);
   return words[0] || 'premium';
 };
+

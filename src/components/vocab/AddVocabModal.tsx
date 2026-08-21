@@ -18,7 +18,11 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { translateWord, extractMultipleWordsFromImage, batchTranslateWords } from '../../services/aiService';
+import {
+  translateWord,
+  extractVocabSheetFromImage,
+  batchTranslateWords,
+} from '../../services/aiService';
 import { speakWord } from '../../services/ttsService';
 import { getThaiPhonetic } from '../../services/phoneticService';
 import type { PartOfSpeech, TranslationResponse } from '../../types';
@@ -76,6 +80,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
 
   // Batch Multi-Word OCR state
   const [extractedWords, setExtractedWords] = useState<VocabEntryDraft[]>([]);
+  const [detectedSheetTitle, setDetectedSheetTitle] = useState<string | null>(null);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [batchStepMessage, setBatchStepMessage] = useState<string | null>(null);
 
@@ -116,16 +121,22 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     if (!file) return;
 
     setError(null);
+    setDetectedSheetTitle(null);
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
       setImagePreview(base64);
       setIsProcessingBatch(true);
-      setBatchStepMessage('Scanning photo & extracting words with OCR.Space...');
+      setBatchStepMessage('Scanning worksheet with Multimodal AI Vision...');
 
       try {
-        // 1. Extract multiple words
-        const rawWords = await extractMultipleWordsFromImage(base64, file.type);
+        // 1. Extract vocabulary words & sheet title using Multimodal Vision AI
+        const sheetResult = await extractVocabSheetFromImage(base64, file.type);
+        const rawWords = sheetResult.words;
+
+        if (sheetResult.title) {
+          setDetectedSheetTitle(sheetResult.title);
+        }
 
         if (!rawWords || rawWords.length === 0) {
           setError('No clear English vocabulary words found in this image. Please try another photo.');
@@ -133,7 +144,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
           return;
         }
 
-        setBatchStepMessage(`Found ${rawWords.length} words! Generating Thai meanings & phonetic guides...`);
+        setBatchStepMessage(`AI identified ${rawWords.length} words! Generating Thai meanings & pronunciations...`);
 
         // 2. Batch translate all extracted words
         const translations: TranslationResponse[] = await batchTranslateWords(rawWords);
@@ -375,11 +386,18 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between bg-primary-light/40 p-3 rounded-xl border border-primary/20">
                     <div className="flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-primary" />
+                      <Layers className="w-5 h-5 text-primary flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-bold text-text-primary">
-                          Detected {extractedWords.length} Words
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-text-primary">
+                            Detected {extractedWords.length} Words
+                          </p>
+                          {detectedSheetTitle && (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary text-white">
+                              {detectedSheetTitle}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-text-secondary">
                           {selectedCount} selected for import
                         </p>

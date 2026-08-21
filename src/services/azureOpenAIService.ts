@@ -189,3 +189,97 @@ Respond ONLY with valid JSON:
   // Fallback: parallel single generation
   return Promise.all(uniqueWords.map((w) => generateVocabWithAzureOpenAI(w)));
 };
+
+export interface ExtractedVocabSheet {
+  title?: string;
+  words: string[];
+}
+
+/**
+ * Extracts vocabulary words & sheet title from an image using Azure OpenAI Vision (gpt-4.1-mini)
+ */
+export const extractVocabListWithAzureVision = async (
+  base64Image: string,
+  mimeType = 'image/jpeg'
+): Promise<ExtractedVocabSheet> => {
+  const key = getAzureOpenAIKey();
+  if (!key) {
+    throw new Error('Azure OpenAI key is not configured');
+  }
+
+  const url = getAzureOpenAIUrl();
+  console.log(`[Azure OpenAI Vision] Extracting vocabulary from image via ${url}...`);
+
+  // Ensure valid data URL format
+  let imageUrl = base64Image;
+  if (!imageUrl.startsWith('data:')) {
+    imageUrl = `data:${mimeType};base64,${base64Image}`;
+  }
+
+  const systemPrompt = `You are an expert AI vision assistant specializing in analyzing educational English worksheets, spelling word lists, textbooks, flashcards, and student study sheets.
+
+Your task:
+1. Identify and extract all TARGET English vocabulary words from the image.
+2. Ignore noise, row numbers, indices (e.g. 1, 2, 3, 4, 11, 12...), page numbers, dates (e.g. "Date: 20/8/26", "Spelling Test Day: 3/9/26"), instructions, and column headers.
+3. Preserve correct sequential reading order (e.g., if there are multiple columns numbered 1 to 10 on the left and 11 to 20 on the right, return them in order 1, 2, 3, ... 20).
+4. Identify any worksheet or list title/topic if visible (e.g., "Spelling Word List (6)", "Science Unit 3", etc.).
+5. Ensure words are clean, lower-cased/standard-cased without leading/trailing numbers or punctuation.
+
+Respond ONLY with valid JSON matching this schema:
+{
+  "title": "Detected Title or empty string",
+  "words": ["word1", "word2", "word3", ...]
+}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'api-key': key,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Please carefully analyze this image, understand its layout (such as tables or numbered columns), and extract all the vocabulary words and the list title in JSON format.',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageUrl,
+              },
+            },
+          ],
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Azure OpenAI Vision Error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('Empty response received from Azure OpenAI Vision');
+  }
+
+  const parsed = JSON.parse(content);
+  const words: string[] = Array.isArray(parsed.words)
+    ? parsed.words.map((w: any) => String(w).trim()).filter(Boolean)
+    : [];
+
+  return {
+    title: parsed.title ? String(parsed.title).trim() : undefined,
+    words,
+  };
+};
+
