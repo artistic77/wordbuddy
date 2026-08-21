@@ -65,21 +65,47 @@ export const generateVocabWithAzureOpenAI = async (word: string): Promise<Transl
   const url = getAzureOpenAIUrl();
   console.log(`[Azure OpenAI] Requesting gpt-4.1-mini for word: "${cleanWord}" -> ${url}`);
 
-  const systemPrompt = `You are an expert English-Thai bilingual educational linguist.
-For any given English vocabulary word or phrase, generate:
-1. "word_en": The English word formatted properly.
-2. "word_th": Natural and accurate Thai meaning / translation (e.g. for "method" -> "วิธีการ", for "bat" -> "ค้างคาว").
-3. "reading_th": The PHONETIC PRONUNCIATION of the ENGLISH WORD written in THAI SCRIPT (คำอ่านออกเสียงของคำภาษาอังกฤษคำนั้นด้วยตัวอักษรไทย ห้ามใส่คำอ่านของคำแปลภาษาไทยเด็ดขาด! ตัวอย่างเช่น: "method" -> "เมธอด" ไม่ใช่ "วิ-ที-การ", "pattern" -> "แพทเทิร์น", "reading" -> "รีดดิ้ง", "bat" -> "แบท", "topology" -> "โทโพโลยี", "premium" -> "พรีเมียม", "schedule" -> "สเกดจูล").
-4. "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"].
-5. "example_sentence_en": A clear, natural, educational English sentence using the word suitable for learners.
-6. "example_sentence_th": A natural Thai translation of the English example sentence.
+  const systemPrompt = `You are a world-class English-Thai educational linguist, dictionary editor, and phonetic specialist for Thai schools.
+
+Your mission is to generate 100% accurate, natural, and standard Thai phonetic pronunciation guides ("reading_th") following authentic English phonetics (IPA) and standard Thai transliteration conventions used in educational dictionaries.
+
+STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
+1. Follow natural spoken English phonetics (IPA stress & vowel quality):
+   - "chicken" -> "ชิกเก้น" (NOT "ชิคเกิน", NOT "ชิเคน")
+   - "perimeter" -> "เพอริมิเทอร์" or "เพอริมมิเตอร์" (NOT "พีริมิเทอร์")
+   - "quadrilateral" -> "ควอดริแลเทอรอล" or "ควอดริแลทเทอรัล"
+   - "parallelogram" -> "แพแรลเลโลแกรม"
+   - "trapezium" -> "ทราพีเซียม" or "ทระพีเซียม"
+   - "diagonal" -> "ไดแอกกะนอล" or "ไดแอกโกนอล"
+   - "heaviest" -> "เฮฟวิเอสต์" or "เฮฟวี่เอสต์"
+   - "rhombus" -> "รอมบัส"
+   - "project" -> "โพรเจ็คท์"
+   - "seeds" -> "ซีดส์"
+   - "nest" -> "เนสต์"
+   - "hatch" -> "แฮทช์"
+   - "chick" -> "ชิค"
+   - "hen" -> "เฮน"
+   - "urban" -> "เออร์บัน"
+   - "arcology" -> "อาร์โคโลจี"
+   - "method" -> "เมธอด"
+   - "schedule" -> "สเกดจูล"
+   - "pattern" -> "แพทเทิร์น"
+
+2. Use correct Thai vowel and consonant symbols:
+   - Final /st/ -> "สต์" (e.g. nest -> เนสต์, heaviest -> เฮฟวิเอสต์)
+   - Final /tʃ/ -> "ทช์" or "ช์" (e.g. hatch -> แฮทช์, watch -> วอทช์)
+   - Final /d/ or /dz/ -> "ด" or "ดส์" (e.g. seeds -> ซีดส์)
+   - Ending -en / -in -> "เก้น" / "เซ่น" / "เท่น" (e.g. chicken -> ชิกเก้น, kitten -> คิทเท่น)
+   - Weak syllables with /ə/ or /ɪ/ -> use natural Thai vowel representations ("เออ", "อะ", "อิ" depending on English stress).
+
+3. NEVER output translation as reading (e.g. for "method" never output "วิธี", output "เมธอด").
 
 Respond ONLY with valid JSON matching this schema:
 {
   "word_en": "string",
   "word_th": "string",
   "reading_th": "string",
-  "part_of_speech": "noun",
+  "part_of_speech": "noun | verb | adj | adv | gerund | past_participle | other",
   "example_sentence_en": "string",
   "example_sentence_th": "string"
 }`;
@@ -132,25 +158,48 @@ export const batchGenerateVocabWithAzureOpenAI = async (words: string[]): Promis
   const uniqueWords = Array.from(new Set(words.map((w) => w.trim()))).filter(Boolean);
   const url = getAzureOpenAIUrl();
 
-  const systemPrompt = `You are an expert English-Thai bilingual educational linguist.
-For each given English word in the input list, return a JSON array containing objects with:
-- "word_en": English word
-- "word_th": Natural Thai meaning
-- "reading_th": The PHONETIC PRONUNCIATION of the ENGLISH WORD in Thai script (คำอ่านออกเสียงของคำภาษาอังกฤษคำนั้นเป็นอักษรไทย เช่น "method" -> "เมธอด", "bat" -> "แบท", "topology" -> "โทโพโลยี")
-- "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"]
-- "example_sentence_en": Clear educational English example sentence
-- "example_sentence_th": Natural Thai translation of the example sentence
+  const systemPrompt = `You are a world-class English-Thai educational linguist, dictionary editor, and phonetic specialist for Thai schools.
+
+Your mission is to generate 100% accurate, natural, and standard Thai phonetic pronunciation guides ("reading_th") following authentic English phonetics (IPA) and standard Thai transliteration conventions used in educational dictionaries.
+
+STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
+1. Follow natural spoken English phonetics (IPA stress & vowel quality):
+   - "chicken" -> "ชิกเก้น" (NOT "ชิคเกิน", NOT "ชิเคน")
+   - "perimeter" -> "เพอริมิเทอร์" or "เพอริมมิเตอร์" (NOT "พีริมิเทอร์")
+   - "quadrilateral" -> "ควอดริแลเทอรอล" or "ควอดริแลทเทอรัล"
+   - "parallelogram" -> "แพแรลเลโลแกรม"
+   - "trapezium" -> "ทราพีเซียม" or "ทระพีเซียม"
+   - "diagonal" -> "ไดแอกกะนอล" or "ไดแอกโกนอล"
+   - "heaviest" -> "เฮฟวิเอสต์" or "เฮฟวี่เอสต์"
+   - "rhombus" -> "รอมบัส"
+   - "project" -> "โพรเจ็คท์"
+   - "seeds" -> "ซีดส์"
+   - "nest" -> "เนสต์"
+   - "hatch" -> "แฮทช์"
+   - "chick" -> "ชิค"
+   - "hen" -> "เฮน"
+   - "urban" -> "เออร์บัน"
+   - "arcology" -> "อาร์โคโลจี"
+
+2. Use correct Thai vowel and consonant symbols:
+   - Final /st/ -> "สต์" (e.g. nest -> เนสต์, heaviest -> เฮฟวิเอสต์)
+   - Final /tʃ/ -> "ทช์" or "ช์" (e.g. hatch -> แฮทช์, watch -> วอทช์)
+   - Final /d/ or /dz/ -> "ด" or "ดส์" (e.g. seeds -> ซีดส์)
+   - Ending -en / -in -> "เก้น" / "เซ่น" / "เท่น" (e.g. chicken -> ชิกเก้น)
+   - Weak syllables with /ə/ or /ɪ/ -> use natural Thai vowel representations ("เออ", "อะ", "อิ" depending on English stress).
+
+3. NEVER output translation as reading (e.g. for "method" never output "วิธี", output "เมธอด").
 
 Respond ONLY with valid JSON:
 {
   "items": [
     {
-      "word_en": "...",
-      "word_th": "...",
-      "reading_th": "...",
-      "part_of_speech": "noun",
-      "example_sentence_en": "...",
-      "example_sentence_th": "..."
+      "word_en": "string",
+      "word_th": "string",
+      "reading_th": "string",
+      "part_of_speech": "noun | verb | adj | adv | gerund | past_participle | other",
+      "example_sentence_en": "string",
+      "example_sentence_th": "string"
     }
   ]
 }`;

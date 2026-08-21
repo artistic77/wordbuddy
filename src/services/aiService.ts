@@ -178,10 +178,10 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
   const directApiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (directApiKey && directApiKey !== 'your_gemini_api_key') {
     try {
-      const prompt = `You are an expert English-Thai bilingual dictionary for students.
+      const prompt = `You are a world-class English-Thai educational linguist and phonetic specialist.
 Given the English word "${word}", provide:
 1. Natural Thai translation ("word_th")
-2. Thai phonetic reading guide ("reading_th", e.g. for "topology" -> "โทโพโลยี", for "bat" -> "แบท")
+2. Accurate standard Thai phonetic reading ("reading_th", following natural English IPA pronunciation, e.g. "chicken" -> "ชิกเก้น", "perimeter" -> "เพอริมิเทอร์", "method" -> "เมธอด", "bat" -> "แบท", "project" -> "โพรเจ็คท์")
 3. Part of speech ("noun", "verb", "adj", "adv", "gerund", "past_participle", or "other")
 4. Simple educational English example sentence ("example_sentence_en")
 5. Thai translation of the example sentence ("example_sentence_th")
@@ -203,7 +203,7 @@ Respond ONLY with valid JSON:
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.2, responseMimeType: 'application/json' },
+            generationConfig: { temperature: 0.1, responseMimeType: 'application/json' },
           }),
         }
       );
