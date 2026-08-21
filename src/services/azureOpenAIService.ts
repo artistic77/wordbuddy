@@ -67,7 +67,18 @@ export const generateVocabWithAzureOpenAI = async (word: string): Promise<Transl
 
   const systemPrompt = `You are a world-class English-Thai educational linguist, dictionary editor, and phonetic specialist for Thai schools.
 
-Your mission is to generate 100% accurate, natural, and standard Thai phonetic pronunciation guides ("reading_th") following authentic English phonetics (IPA) and standard Thai transliteration conventions used in educational dictionaries.
+For any given English vocabulary word or phrase, you MUST provide accurate bilingual details with STRICT separation between Thai Meaning (word_th) and Thai Phonetic Reading (reading_th):
+
+1. "word_en": The English word properly formatted.
+2. "word_th": The accurate, natural Thai MEANING / TRANSLATION (ความหมาย/คำแปลภาษาไทย).
+   - Examples of MEANING: "method" -> "วิธีการ / วิธี", "chicken" -> "ไก่ / เนื้อไก่", "bat" -> "ค้างคาว / ไม้เบสบอล", "nest" -> "รังนก", "diligent" -> "ขยันหมั่นเพียร", "serendipity" -> "โชคดีที่พบสิ่งดีโดยไม่คาดฝัน".
+   - CRITICAL: NEVER put phonetic reading/transliteration in "word_th".
+3. "reading_th": The standard Thai PHONETIC PRONUNCIATION guide (คำอ่านออกเสียงของคำภาษาอังกฤษเป็นอักษรไทย).
+   - Examples of READING: "method" -> "เมธอด", "chicken" -> "ชิกเก้น", "bat" -> "แบท", "nest" -> "เนสต์", "diligent" -> "ดิลิเจินท์", "serendipity" -> "เซเรนดิพิตี้".
+   - CRITICAL: NEVER put the Thai meaning in "reading_th".
+4. "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"].
+5. "example_sentence_en": Clear educational English example sentence using the word.
+6. "example_sentence_th": Natural Thai translation of the example sentence.
 
 STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
 1. Follow natural spoken English phonetics (IPA stress & vowel quality):
@@ -97,8 +108,6 @@ STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
    - Final /d/ or /dz/ -> "ด" or "ดส์" (e.g. seeds -> ซีดส์)
    - Ending -en / -in -> "เก้น" / "เซ่น" / "เท่น" (e.g. chicken -> ชิกเก้น, kitten -> คิทเท่น)
    - Weak syllables with /ə/ or /ɪ/ -> use natural Thai vowel representations ("เออ", "อะ", "อิ" depending on English stress).
-
-3. NEVER output translation as reading (e.g. for "method" never output "วิธี", output "เมธอด").
 
 Respond ONLY with valid JSON matching this schema:
 {
@@ -160,7 +169,18 @@ export const batchGenerateVocabWithAzureOpenAI = async (words: string[]): Promis
 
   const systemPrompt = `You are a world-class English-Thai educational linguist, dictionary editor, and phonetic specialist for Thai schools.
 
-Your mission is to generate 100% accurate, natural, and standard Thai phonetic pronunciation guides ("reading_th") following authentic English phonetics (IPA) and standard Thai transliteration conventions used in educational dictionaries.
+For each given English vocabulary word or phrase, you MUST provide accurate bilingual details with STRICT separation between Thai Meaning (word_th) and Thai Phonetic Reading (reading_th):
+
+1. "word_en": The English word properly formatted.
+2. "word_th": The accurate, natural Thai MEANING / TRANSLATION (ความหมาย/คำแปลภาษาไทย).
+   - Examples of MEANING: "method" -> "วิธีการ / วิธี", "chicken" -> "ไก่ / เนื้อไก่", "bat" -> "ค้างคาว / ไม้เบสบอล", "nest" -> "รังนก", "diligent" -> "ขยันหมั่นเพียร", "serendipity" -> "โชคดีที่พบสิ่งดีโดยไม่คาดฝัน".
+   - CRITICAL: NEVER put phonetic reading/transliteration in "word_th".
+3. "reading_th": The standard Thai PHONETIC PRONUNCIATION guide (คำอ่านออกเสียงของคำภาษาอังกฤษเป็นอักษรไทย).
+   - Examples of READING: "method" -> "เมธอด", "chicken" -> "ชิกเก้น", "bat" -> "แบท", "nest" -> "เนสต์", "diligent" -> "ดิลิเจินท์", "serendipity" -> "เซเรนดิพิตี้".
+   - CRITICAL: NEVER put the Thai meaning in "reading_th".
+4. "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"].
+5. "example_sentence_en": Clear educational English example sentence using the word.
+6. "example_sentence_th": Natural Thai translation of the example sentence.
 
 STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
 1. Follow natural spoken English phonetics (IPA stress & vowel quality):
@@ -180,6 +200,9 @@ STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
    - "hen" -> "เฮน"
    - "urban" -> "เออร์บัน"
    - "arcology" -> "อาร์โคโลจี"
+   - "method" -> "เมธอด"
+   - "schedule" -> "สเกดจูล"
+   - "pattern" -> "แพทเทิร์น"
 
 2. Use correct Thai vowel and consonant symbols:
    - Final /st/ -> "สต์" (e.g. nest -> เนสต์, heaviest -> เฮฟวิเอสต์)
@@ -187,8 +210,6 @@ STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
    - Final /d/ or /dz/ -> "ด" or "ดส์" (e.g. seeds -> ซีดส์)
    - Ending -en / -in -> "เก้น" / "เซ่น" / "เท่น" (e.g. chicken -> ชิกเก้น)
    - Weak syllables with /ə/ or /ɪ/ -> use natural Thai vowel representations ("เออ", "อะ", "อิ" depending on English stress).
-
-3. NEVER output translation as reading (e.g. for "method" never output "วิธี", output "เมธอด").
 
 Respond ONLY with valid JSON:
 {

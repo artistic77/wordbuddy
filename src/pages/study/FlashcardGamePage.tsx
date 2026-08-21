@@ -111,7 +111,9 @@ export const FlashcardGamePage: React.FC = () => {
     );
   }
 
-  const phonetic = getThaiPhonetic(currentCard.word_en);
+  const phonetic = currentCard.audio_url?.startsWith('reading_th:')
+    ? currentCard.audio_url.replace(/^reading_th:/, '')
+    : getThaiPhonetic(currentCard.word_en);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-surface via-primary-light/20 to-surface">
