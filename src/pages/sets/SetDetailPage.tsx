@@ -15,6 +15,7 @@ import {
   Edit2,
   Pencil,
   Check,
+  X,
   Puzzle,
   PenTool,
 } from 'lucide-react';
@@ -230,7 +231,7 @@ export const SetDetailPage: React.FC = () => {
       {/* Set Header Card */}
       <Card className="p-6 sm:p-8 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1 min-w-0 w-full">
             <div className="flex items-center gap-2">
               <Badge variant="noun" size="sm">
                 <BookOpen className="w-3.5 h-3.5 mr-1" />
@@ -238,31 +239,50 @@ export const SetDetailPage: React.FC = () => {
               </Badge>
               {set.is_public ? (
                 <Badge variant="adj" size="sm">
-                  <Globe className="w-3 h-3 mr-1" /> Public
+                  <Globe className="w-3.5 h-3.5 mr-1" /> Public
                 </Badge>
               ) : (
                 <Badge variant="other" size="sm">
-                  <Lock className="w-3 h-3 mr-1" /> Private
+                  <Lock className="w-3.5 h-3.5 mr-1" /> Private
                 </Badge>
               )}
             </div>
 
             {/* Editable Title */}
             {isEditingTitle && isOwner ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full max-w-xl">
                 <input
                   type="text"
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-2xl sm:text-3xl font-outfit font-bold text-text-primary px-2 py-1 rounded-lg border border-primary focus:outline-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveTitle();
+                    if (e.key === 'Escape') {
+                      setEditedTitle(set.title);
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  className="flex-1 min-w-0 text-xl sm:text-2xl md:text-3xl font-outfit font-bold text-text-primary px-3 py-1.5 rounded-xl border-2 border-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
                   autoFocus
                 />
                 <button
+                  type="button"
                   onClick={handleSaveTitle}
-                  className="p-2 rounded-xl bg-accent-green text-white hover:bg-accent-emerald"
+                  className="p-2.5 rounded-xl bg-accent-green text-white hover:bg-accent-emerald transition-colors flex-shrink-0 shadow-sm"
                   title="Save title"
                 >
                   <Check className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditedTitle(set.title);
+                    setIsEditingTitle(false);
+                  }}
+                  className="p-2.5 rounded-xl bg-gray-100 text-text-secondary hover:bg-gray-200 transition-colors flex-shrink-0"
+                  title="Cancel"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             ) : (
