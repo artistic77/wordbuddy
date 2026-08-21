@@ -202,16 +202,6 @@ export const EditVocabModal: React.FC<EditVocabModalProps> = ({
                 placeholder="เช่น อินโฟกราฟิก, เมธอด, แบท"
                 className="w-full px-3.5 py-2.5 bg-transparent font-sarabun text-sm text-text-primary focus:outline-none"
               />
-              {readingTh.trim() && (
-                <button
-                  type="button"
-                  onClick={() => speakWord(readingTh, 'th')}
-                  className="px-3 text-text-secondary hover:text-primary hover:bg-primary-light transition-colors"
-                  title="ฟังเสียงอ่านภาษาไทย"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-              )}
             </div>
           </div>
 

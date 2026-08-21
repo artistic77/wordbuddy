@@ -239,16 +239,8 @@ export const FillBlankGamePage: React.FC = () => {
               <Badge pos={currentEntry.part_of_speech} size="md">
                 Hint POS: {currentEntry.part_of_speech}
               </Badge>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-light text-primary font-sarabun border border-primary/20">
+              <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-light text-primary font-sarabun border border-primary/20">
                 อ่านว่า: {phonetic}
-                <button
-                  type="button"
-                  onClick={() => speakWord(phonetic, 'th')}
-                  className="p-0.5 hover:bg-primary/20 rounded-full transition-colors"
-                  title="ฟังเสียงอ่านภาษาไทย"
-                >
-                  <Volume2 className="w-3.5 h-3.5" />
-                </button>
               </span>
             </div>
 

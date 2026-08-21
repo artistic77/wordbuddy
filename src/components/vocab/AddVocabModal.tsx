@@ -680,16 +680,6 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                       value={readingTh}
                       onChange={(e) => setReadingTh(e.target.value)}
                     />
-                    {readingTh && (
-                      <button
-                        type="button"
-                        onClick={() => speakWord(readingTh, 'th')}
-                        className="px-3 text-text-secondary hover:text-primary transition-colors border-l border-border/80 flex items-center"
-                        title="ฟังเสียงอ่านภาษาไทย"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
 

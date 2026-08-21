@@ -453,17 +453,9 @@ export const SetDetailPage: React.FC = () => {
                           {entry.word_en}
                         </span>
 
-                        {/* Phonetic Pronunciation Tag with Thai Audio Button */}
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold pl-2.5 pr-1.5 py-0.5 rounded-full bg-primary-light text-primary font-sarabun border border-primary/20">
+                        {/* Phonetic Pronunciation Tag */}
+                        <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary-light text-primary font-sarabun border border-primary/20">
                           อ่านว่า: {phonetic}
-                          <button
-                            type="button"
-                            onClick={() => speakWord(phonetic, 'th')}
-                            className="p-0.5 rounded-full hover:bg-primary/10 text-primary transition-colors"
-                            title="ฟังเสียงอ่านภาษาไทย"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </button>
                         </span>
 
                         {/* English Audio Button */}

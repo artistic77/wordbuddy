@@ -170,8 +170,6 @@ export const MatchingGamePage: React.FC = () => {
     // Play pronunciation if EN
     if (tile.type === 'en') {
       speakWord(tile.text, 'en');
-    } else if (tile.readingTh) {
-      speakWord(tile.readingTh, 'th');
     }
 
     // First tile selection

@@ -155,20 +155,9 @@ export const FlashcardGamePage: React.FC = () => {
               <h2 className="text-3xl sm:text-4xl font-outfit font-bold text-text-primary tracking-tight">
                 {currentCard.word_en}
               </h2>
-              {/* Thai reading with Audio */}
-              <div className="inline-flex items-center gap-1.5 bg-primary-light/80 text-primary font-sarabun px-3 py-1 rounded-full border border-primary/20">
+              {/* Thai reading */}
+              <div className="inline-flex items-center bg-primary-light/80 text-primary font-sarabun px-3 py-1 rounded-full border border-primary/20">
                 <span className="text-sm font-semibold">อ่านว่า: {phonetic}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    speakWord(phonetic, 'th');
-                  }}
-                  className="p-1 rounded-full hover:bg-primary/20 transition-colors"
-                  title="ฟังเสียงอ่านภาษาไทย"
-                >
-                  <Volume2 className="w-3.5 h-3.5" />
-                </button>
               </div>
             </div>
 
