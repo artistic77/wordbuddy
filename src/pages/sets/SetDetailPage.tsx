@@ -18,6 +18,8 @@ import {
   X,
   Puzzle,
   PenTool,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -40,6 +42,10 @@ export const SetDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEntryForEdit, setSelectedEntryForEdit] = useState<VocabEntry | null>(null);
+
+  // Bulk selection & deletion state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Inline title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -79,6 +85,7 @@ export const SetDetailPage: React.FC = () => {
 
   useEffect(() => {
     fetchSetData();
+    setSelectedIds(new Set());
   }, [id]);
 
   const handleSaveTitle = async () => {
@@ -97,6 +104,7 @@ export const SetDetailPage: React.FC = () => {
     }
   };
 
+  // Add single word with duplicate prevention
   const handleAddWord = async (entry: {
     word_en: string;
     word_th: string;
@@ -106,6 +114,16 @@ export const SetDetailPage: React.FC = () => {
     example_sentence_th: string;
   }) => {
     if (!set || !user) return;
+
+    // Check duplicate
+    const isDup = entries.some(
+      (e) => e.word_en.trim().toLowerCase() === entry.word_en.trim().toLowerCase()
+    );
+    if (isDup) {
+      alert(`คำว่า "${entry.word_en}" มีอยู่ในชุดคำศัพท์นี้แล้ว`);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('vocab_entries')
       .insert({
@@ -127,6 +145,7 @@ export const SetDetailPage: React.FC = () => {
     }
   };
 
+  // Add multiple words with duplicate filtering
   const handleBatchAddWords = async (
     newEntries: Array<{
       word_en: string;
@@ -139,7 +158,15 @@ export const SetDetailPage: React.FC = () => {
   ) => {
     if (!set || !user || newEntries.length === 0) return;
 
-    const payload = newEntries.map((e) => ({
+    const existingLower = new Set(entries.map((e) => e.word_en.trim().toLowerCase()));
+    const filtered = newEntries.filter((e) => !existingLower.has(e.word_en.trim().toLowerCase()));
+
+    if (filtered.length === 0) {
+      alert('ทุกคำในชุดนี้มีอยู่แล้วในชุดคำศัพท์');
+      return;
+    }
+
+    const payload = filtered.map((e) => ({
       set_id: set.id,
       owner_id: user.id,
       word_en: e.word_en,
@@ -161,14 +188,61 @@ export const SetDetailPage: React.FC = () => {
     }
   };
 
+  // Delete single word
   const handleDeleteEntry = async (entryId: string) => {
     if (!window.confirm('Delete this word from the set?')) return;
     try {
       const { error } = await supabase.from('vocab_entries').delete().eq('id', entryId);
       if (error) throw error;
       setEntries((prev) => prev.filter((e) => e.id !== entryId));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(entryId);
+        return next;
+      });
     } catch (err) {
       console.error('Error deleting word:', err);
+    }
+  };
+
+  // Batch delete multiple selected words
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!window.confirm(`Are you sure you want to delete ${count} selected word${count > 1 ? 's' : ''} from this set?`)) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    try {
+      const idsToDelete = Array.from(selectedIds);
+      const { error } = await supabase.from('vocab_entries').delete().in('id', idsToDelete);
+      if (error) throw error;
+
+      setEntries((prev) => prev.filter((e) => !selectedIds.has(e.id)));
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error('Error deleting selected words:', err);
+      alert('Failed to delete selected words. Please try again.');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleToggleSelectEntry = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.size === entries.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(entries.map((e) => e.id)));
     }
   };
 
@@ -216,23 +290,24 @@ export const SetDetailPage: React.FC = () => {
   }
 
   const isOwner = user?.id === set.owner_id;
+  const isAllSelected = entries.length > 0 && selectedIds.size === entries.length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 pb-28">
       {/* Back Button */}
       <Link
         to="/sets"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-text-secondary hover:text-primary transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-secondary hover:text-primary transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Sets
       </Link>
 
       {/* Set Header Card */}
-      <Card className="p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <Card className="p-4 sm:p-7 space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2 flex-1 min-w-0 w-full">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="noun" size="sm">
                 <BookOpen className="w-3.5 h-3.5 mr-1" />
                 {entries.length} {entries.length === 1 ? 'word' : 'words'}
@@ -262,16 +337,16 @@ export const SetDetailPage: React.FC = () => {
                       setIsEditingTitle(false);
                     }
                   }}
-                  className="flex-1 min-w-0 text-xl sm:text-2xl md:text-3xl font-outfit font-bold text-text-primary px-3 py-1.5 rounded-xl border-2 border-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                  className="flex-1 min-w-0 text-lg sm:text-2xl md:text-3xl font-outfit font-bold text-text-primary px-3 py-1.5 rounded-xl border-2 border-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={handleSaveTitle}
-                  className="p-2.5 rounded-xl bg-accent-green text-white hover:bg-accent-emerald transition-colors flex-shrink-0 shadow-sm"
+                  className="p-2 sm:p-2.5 rounded-xl bg-accent-green text-white hover:bg-accent-emerald transition-colors flex-shrink-0 shadow-sm"
                   title="Save title"
                 >
-                  <Check className="w-5 h-5" />
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
                 <button
                   type="button"
@@ -279,15 +354,15 @@ export const SetDetailPage: React.FC = () => {
                     setEditedTitle(set.title);
                     setIsEditingTitle(false);
                   }}
-                  className="p-2.5 rounded-xl bg-gray-100 text-text-secondary hover:bg-gray-200 transition-colors flex-shrink-0"
+                  className="p-2 sm:p-2.5 rounded-xl bg-gray-100 text-text-secondary hover:bg-gray-200 transition-colors flex-shrink-0"
                   title="Cancel"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl sm:text-3xl font-outfit font-bold text-text-primary">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <h1 className="text-xl sm:text-3xl font-outfit font-bold text-text-primary">
                   {set.title}
                 </h1>
                 {isOwner && (
@@ -303,16 +378,16 @@ export const SetDetailPage: React.FC = () => {
             )}
 
             {set.description && (
-              <p className="text-sm text-text-secondary italic max-w-2xl">{set.description}</p>
+              <p className="text-xs sm:text-sm text-text-secondary italic max-w-2xl">{set.description}</p>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {isOwner && (
-              <Button variant="secondary" size="md" onClick={() => setIsAddModalOpen(true)}>
+              <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-1" />
-                Add Words (Photo / Text)
+                Add Words (AI / Photo / Type)
               </Button>
             )}
           </div>
@@ -320,22 +395,22 @@ export const SetDetailPage: React.FC = () => {
 
         {/* Study Modes Bar */}
         {entries.length > 0 && (
-          <div className="pt-6 border-t border-border">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">
+          <div className="pt-5 border-t border-border">
+            <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">
               Choose Study Mode (5 Interactive Games)
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
               {/* 1. Flashcards */}
               <Link to={`/sets/${set.id}/study/flashcard`} className="block">
                 <Button
                   variant="primary"
                   size="md"
-                  className="w-full justify-start h-14 bg-gradient-to-r from-primary to-primary-hover shadow-sm"
+                  className="w-full justify-start h-13 sm:h-14 bg-gradient-to-r from-primary to-primary-hover shadow-sm"
                 >
-                  <Layers className="w-5 h-5 mr-2.5 flex-shrink-0" />
+                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm font-bold">1. Flashcards</p>
-                    <p className="text-[11px] font-normal opacity-90">Memory cards</p>
+                    <p className="text-xs sm:text-sm font-bold">1. Flashcards</p>
+                    <p className="text-[10px] sm:text-[11px] font-normal opacity-90">Memory cards</p>
                   </div>
                 </Button>
               </Link>
@@ -345,12 +420,12 @@ export const SetDetailPage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="md"
-                  className="w-full justify-start h-14 border border-primary/20 hover:border-primary"
+                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
                 >
-                  <Headphones className="w-5 h-5 mr-2.5 text-primary flex-shrink-0" />
+                  <Headphones className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm font-bold text-text-primary">2. Spelling Quiz</p>
-                    <p className="text-[11px] font-normal text-text-secondary">Listen & spell</p>
+                    <p className="text-xs sm:text-sm font-bold text-text-primary">2. Spelling Quiz</p>
+                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">Listen & spell</p>
                   </div>
                 </Button>
               </Link>
@@ -360,12 +435,12 @@ export const SetDetailPage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="md"
-                  className="w-full justify-start h-14 border border-primary/20 hover:border-primary"
+                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
                 >
-                  <HelpCircle className="w-5 h-5 mr-2.5 text-primary flex-shrink-0" />
+                  <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm font-bold text-text-primary">3. Quiz (Choice)</p>
-                    <p className="text-[11px] font-normal text-text-secondary">4 Thai options</p>
+                    <p className="text-xs sm:text-sm font-bold text-text-primary">3. Quiz (Choice)</p>
+                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">4 Thai options</p>
                   </div>
                 </Button>
               </Link>
@@ -375,12 +450,12 @@ export const SetDetailPage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="md"
-                  className="w-full justify-start h-14 border border-primary/20 hover:border-primary"
+                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
                 >
-                  <Puzzle className="w-5 h-5 mr-2.5 text-primary flex-shrink-0" />
+                  <Puzzle className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm font-bold text-text-primary">4. Matching</p>
-                    <p className="text-[11px] font-normal text-text-secondary">Pair EN & TH</p>
+                    <p className="text-xs sm:text-sm font-bold text-text-primary">4. Matching</p>
+                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">Pair EN & TH</p>
                   </div>
                 </Button>
               </Link>
@@ -390,12 +465,12 @@ export const SetDetailPage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="md"
-                  className="w-full justify-start h-14 border border-primary/20 hover:border-primary"
+                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
                 >
-                  <PenTool className="w-5 h-5 mr-2.5 text-primary flex-shrink-0" />
+                  <PenTool className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm font-bold text-text-primary">5. Fill in Blank</p>
-                    <p className="text-[11px] font-normal text-text-secondary">Sentence blanks</p>
+                    <p className="text-xs sm:text-sm font-bold text-text-primary">5. Fill in Blank</p>
+                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">Sentence blanks</p>
                   </div>
                 </Button>
               </Link>
@@ -404,99 +479,199 @@ export const SetDetailPage: React.FC = () => {
         )}
       </Card>
 
-      {/* Vocab Entries List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-outfit font-bold text-text-primary">
-            Vocabulary List ({entries.length})
-          </h2>
+      {/* Vocab Entries List Section */}
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg sm:text-xl font-outfit font-bold text-text-primary">
+              Vocabulary List ({entries.length})
+            </h2>
+            {isOwner && entries.length > 0 && (
+              <button
+                type="button"
+                onClick={handleToggleSelectAll}
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary-light/50 border border-primary/20 transition-colors"
+              >
+                {isAllSelected ? (
+                  <>
+                    <Square className="w-3.5 h-3.5" />
+                    <span>Deselect All</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    <span>Select All ({entries.length})</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
           {isOwner && entries.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add More
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setIsAddModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-1" />
+                Add More
+              </Button>
+            </div>
           )}
         </div>
 
-        {entries.length === 0 ? (
-          <Card className="py-16 text-center space-y-4 border-dashed border-2">
-            <div className="w-16 h-16 mx-auto rounded-3xl bg-primary-light/60 flex items-center justify-center text-primary">
-              <Sparkles className="w-8 h-8" />
+        {/* Bulk Action Sticky/Floating Bar */}
+        {isOwner && selectedIds.size > 0 && (
+          <div className="p-3 sm:p-4 rounded-2xl bg-white border-2 border-secondary/30 shadow-modal flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up sticky top-4 z-20">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-secondary-light text-secondary flex items-center justify-center font-bold text-sm">
+                {selectedIds.size}
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-text-primary">
+                  Selected {selectedIds.size} of {entries.length} words
+                </p>
+                <p className="text-[11px] text-text-secondary">
+                  Ready for batch removal
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-outfit font-bold text-text-primary">No words in this set yet</h3>
-              <p className="text-xs text-text-secondary mt-1">
-                Add vocabulary using instant AI translation or by uploading textbook photos!
+
+            <div className="flex items-center gap-2 justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Cancel Selection
+              </Button>
+
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                onClick={handleBatchDelete}
+                isLoading={isBulkDeleting}
+                className="bg-secondary text-white hover:bg-secondary-hover shadow-sm"
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                Delete Selected ({selectedIds.size})
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {entries.length === 0 ? (
+          <Card className="py-14 sm:py-16 text-center space-y-4 border-dashed border-2">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-3xl bg-primary-light/60 flex items-center justify-center text-primary">
+              <Sparkles className="w-7 h-7 sm:w-8 sm:h-8" />
+            </div>
+            <div className="px-4">
+              <h3 className="text-base sm:text-lg font-outfit font-bold text-text-primary">
+                No words in this set yet
+              </h3>
+              <p className="text-xs text-text-secondary mt-1 max-w-sm mx-auto">
+                Add vocabulary using instant AI prompts, photo worksheet scanning, or typing!
               </p>
             </div>
             {isOwner && (
               <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-1.5" />
-                Add Words (Photo / Type)
+                Add Words (AI / Photo / Type)
               </Button>
             )}
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             {entries.map((entry, index) => {
               const phonetic = entry.audio_url
                 ? entry.audio_url.replace(/^reading_th:/, '')
                 : getThaiPhonetic(entry.word_en);
+              const isSelected = selectedIds.has(entry.id);
+
               return (
-                <Card key={entry.id} className="p-4 sm:p-5 hover:border-primary/40 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Left: Word & Audio & Phonetic */}
-                    <div className="space-y-1 sm:space-y-1.5">
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-xs font-bold text-text-muted w-5">{index + 1}.</span>
-                        <span className="text-xl font-outfit font-bold text-primary">
-                          {entry.word_en}
-                        </span>
-
-                        {/* Phonetic Pronunciation Tag */}
-                        <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary-light text-primary font-sarabun border border-primary/20">
-                          อ่านว่า: {phonetic}
-                        </span>
-
-                        {/* English Audio Button */}
+                <Card
+                  key={entry.id}
+                  className={`p-3.5 sm:p-4 md:p-5 transition-all ${
+                    isSelected
+                      ? 'border-primary bg-primary-light/10 shadow-sm'
+                      : 'hover:border-primary/40'
+                  }`}
+                >
+                  <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4">
+                    {/* Left: Checkbox + Word Info */}
+                    <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+                      {isOwner && (
                         <button
                           type="button"
-                          onClick={() => speakWord(entry.word_en, 'en')}
-                          className="p-1.5 rounded-full text-text-secondary hover:text-primary hover:bg-primary-light transition-colors flex items-center gap-1 text-xs"
-                          title="Listen to English pronunciation"
+                          onClick={() => handleToggleSelectEntry(entry.id)}
+                          className="mt-1 sm:mt-0 p-1 text-primary hover:scale-110 active:scale-95 transition-transform flex-shrink-0"
+                          aria-label={isSelected ? 'Deselect word' : 'Select word'}
                         >
-                          <Volume2 className="w-4 h-4" />
-                          <span className="text-[11px] font-semibold">EN</span>
+                          {isSelected ? (
+                            <CheckSquare className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-400 hover:text-primary" />
+                          )}
                         </button>
-                        <Badge pos={entry.part_of_speech} size="sm">
-                          {entry.part_of_speech}
-                        </Badge>
-                      </div>
+                      )}
 
-                      <div className="pl-8">
-                        <p className="text-base font-sarabun text-text-primary font-medium">
-                          {entry.word_th}
-                        </p>
-                        {entry.example_sentence_en && (
-                          <p className="text-xs text-text-secondary mt-1">
-                            "{entry.example_sentence_en}"
-                            {entry.example_sentence_th && (
-                              <span className="block font-sarabun text-text-muted mt-0.5">
-                                ({entry.example_sentence_th})
-                              </span>
-                            )}
+                      <div className="space-y-1 sm:space-y-1.5 flex-1 min-w-0">
+                        {/* Word line + Phonetics + POS Badge + EN Audio */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-text-muted select-none w-5">
+                            {index + 1}.
+                          </span>
+                          <span className="text-base sm:text-lg md:text-xl font-outfit font-bold text-primary truncate max-w-[180px] sm:max-w-none">
+                            {entry.word_en}
+                          </span>
+
+                          {/* Phonetic Pronunciation Tag */}
+                          <span className="inline-flex items-center text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 rounded-full bg-primary-light text-primary font-sarabun border border-primary/20">
+                            อ่านว่า: {phonetic}
+                          </span>
+
+                          {/* English Audio Button */}
+                          <button
+                            type="button"
+                            onClick={() => speakWord(entry.word_en, 'en')}
+                            className="p-1 sm:p-1.5 rounded-full text-text-secondary hover:text-primary hover:bg-primary-light transition-colors flex items-center gap-1 text-xs flex-shrink-0"
+                            title="Listen to English pronunciation"
+                          >
+                            <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span className="text-[10px] sm:text-[11px] font-semibold">EN</span>
+                          </button>
+
+                          <Badge pos={entry.part_of_speech} size="sm">
+                            {entry.part_of_speech}
+                          </Badge>
+                        </div>
+
+                        {/* Thai meaning and example sentences */}
+                        <div className="pl-6 sm:pl-7">
+                          <p className="text-sm sm:text-base font-sarabun text-text-primary font-medium">
+                            {entry.word_th}
                           </p>
-                        )}
+                          {entry.example_sentence_en && (
+                            <p className="text-xs text-text-secondary mt-0.5 sm:mt-1 leading-relaxed">
+                              "{entry.example_sentence_en}"
+                              {entry.example_sentence_th && (
+                                <span className="block font-sarabun text-text-muted mt-0.5">
+                                  ({entry.example_sentence_th})
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     {/* Right: Actions */}
                     {isOwner && (
-                      <div className="flex items-center justify-end gap-1.5 sm:self-center">
+                      <div className="flex items-center justify-end gap-1 flex-shrink-0 self-start sm:self-center">
                         <button
                           type="button"
                           onClick={() => setSelectedEntryForEdit(entry)}
-                          className="p-2 rounded-xl text-text-secondary hover:text-primary hover:bg-primary-light transition-colors"
+                          className="p-1.5 sm:p-2 rounded-xl text-text-secondary hover:text-primary hover:bg-primary-light transition-colors"
                           title="Edit word card (แก้ไขคำศัพท์และคำอ่าน)"
                         >
                           <Pencil className="w-4 h-4" />
@@ -504,7 +679,7 @@ export const SetDetailPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleDeleteEntry(entry.id)}
-                          className="p-2 rounded-xl text-text-secondary hover:text-secondary hover:bg-secondary-light transition-colors"
+                          className="p-1.5 sm:p-2 rounded-xl text-text-secondary hover:text-secondary hover:bg-secondary-light transition-colors"
                           title="Delete word"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -533,10 +708,11 @@ export const SetDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Add Vocab Modal */}
+      {/* Add Vocab Modal with Duplicate Prevention */}
       <AddVocabModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        existingWords={entries.map((e) => e.word_en)}
         onSave={handleAddWord}
         onBatchSave={handleBatchAddWords}
       />

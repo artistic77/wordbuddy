@@ -4,6 +4,7 @@ import {
   generateVocabWithAzureOpenAI,
   batchGenerateVocabWithAzureOpenAI,
   extractVocabListWithAzureVision,
+  generateVocabFromPromptWithAzureOpenAI,
   isAzureOpenAIConfigured,
   type ExtractedVocabSheet,
 } from './azureOpenAIService';
@@ -12,6 +13,7 @@ import { getThaiPhonetic } from './phoneticService';
 import type { PartOfSpeech, TranslationResponse } from '../types';
 
 export type { ExtractedVocabSheet };
+
 
 // Built-in educational bilingual dictionary for instant responses & offline resilience
 const EDUCATIONAL_DICTIONARY: Record<string, TranslationResponse> = {
@@ -405,4 +407,54 @@ export const extractTextFromImage = async (base64Image: string, mimeType = 'imag
   const words = await extractMultipleWordsFromImage(base64Image, mimeType);
   return words[0] || 'premium';
 };
+
+/**
+ * Generates vocabulary words from a prompt/topic with count constraint (1-50 words)
+ * and duplicate filtering against existing set words
+ */
+export const generateVocabFromPrompt = async (
+  prompt: string,
+  count: number = 10,
+  existingWords: string[] = []
+): Promise<TranslationResponse[]> => {
+  console.log(`[AI Service] generateVocabFromPrompt("${prompt}", count=${count})`);
+  
+  if (isAzureOpenAIConfigured()) {
+    try {
+      const items = await generateVocabFromPromptWithAzureOpenAI(prompt, count, existingWords);
+      if (items.length > 0) {
+        return items;
+      }
+    } catch (err) {
+      console.warn('Azure OpenAI prompt generation failed:', err);
+    }
+  }
+
+  // Fallback generation if Azure is unavailable or returns empty
+  const fallbackThemes: Record<string, string[]> = {
+    airport: ['departure', 'boarding', 'passport', 'luggage', 'terminal', 'flight', 'passenger', 'customs', 'delayed', 'gate'],
+    animal: ['habitat', 'predator', 'nocturnal', 'species', 'ecosystem', 'mammal', 'reptile', 'carnivore', 'herbivore', 'extinct'],
+    business: ['negotiate', 'collaborate', 'strategy', 'revenue', 'objective', 'deadline', 'agenda', 'stakeholder', 'presentation', 'efficient'],
+    travel: ['destination', 'itinerary', 'journey', 'souvenir', 'accommodation', 'explore', 'adventure', 'guidebook', 'scenic', 'voyage'],
+  };
+
+  const lowerPrompt = prompt.toLowerCase();
+  let matchedWords: string[] = [];
+  for (const [key, words] of Object.entries(fallbackThemes)) {
+    if (lowerPrompt.includes(key)) {
+      matchedWords = words;
+      break;
+    }
+  }
+
+  if (matchedWords.length === 0) {
+    matchedWords = ['curious', 'brilliant', 'creativity', 'enthusiasm', 'persevere', 'magnificent', 'resilience', 'diligent', 'courage', 'achieve'];
+  }
+
+  const existingSet = new Set(existingWords.map((w) => w.toLowerCase()));
+  const filteredWords = matchedWords.filter((w) => !existingSet.has(w)).slice(0, count);
+
+  return batchGenerateVocabWithAzureOpenAI(filteredWords.length > 0 ? filteredWords : matchedWords.slice(0, count));
+};
+
 
