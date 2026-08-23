@@ -1,0 +1,45 @@
+# Bulk Delete, AI Prompt Generator & Duplicate Prevention Spec (2026-08-23)
+
+## 📌 Executive Summary
+เอกสารบันทึกการพัฒนาฟีเจอร์ระบบจัดการชุดคำศัพท์ (Vocabulary Management) ประจำวันที่ 23 สิงหาคม 2026 ครอบคลุม:
+1. **ระบบลบคำศัพท์ทีละหลายคำ (Bulk/Batch Delete)** และการเลือกทั้งหมด (Select All / Deselect All)
+2. **ระบบสร้างคำศัพท์ด้วย AI Prompt (AI Prompt Generator)** จำกัดสูงสุด 50 คำต่อรอบ พร้อมระบบ Guardrails ป้องกันการออกนอกเรื่อง
+3. **ระบบป้องกันคำซ้ำ (Duplicate Word Prevention)** ทั้งในการพิมพ์คำเดี่ยว, การ Generate ด้วย AI และการสแกนใบงาน
+4. **การปรับปรุงการแสดงผล UI บนมือถือ (Mobile Responsive Optimization)** และขนาดตัวอักษรที่อ่านง่าย สบายตา
+
+---
+
+## 1. Bulk Delete & Multi-Select System
+- **Components Modified**: `src/pages/sets/SetDetailPage.tsx`
+- **Features**:
+  - Checkbox ประจำการ์ดคำศัพท์แต่ละใบ ขนาดแตะง่ายสำหรับ Touchscreen
+  - ปุ่ม **Select All / Deselect All** เพื่อเลือกคำศัพท์ทั้งหมดในชุดได้ในคลิกเดียว
+  - **Sticky Action Bar** เมื่อมีการเลือกคำศัพท์ แสดงจำนวนคำที่เลือก ปุ่มยกเลิกการเลือก และปุ่ม **Delete Selected (N)** สีแดงเด่นชัด
+  - ยืนยันก่อนลบ (Confirmation Dialog) และส่งคำสั่งลบแบบ Batch Delete ไปยัง Supabase ผ่าน `.delete().in('id', selectedIds)`
+
+---
+
+## 2. AI Prompt Generator with Strict Guardrails (Max 50 Words)
+- **Services & Components**: `src/services/azureOpenAIService.ts`, `src/services/aiService.ts`, `src/components/vocab/AddVocabModal.tsx`
+- **Features**:
+  - แท็บ **"AI Prompt"** ในโมดอล Add Vocab พร้อมช่องใส่หัวข้อ/คำอธิบาย
+  - **Word Count Limiter**: กำหนดจำนวนคำที่ต้องการได้ตั้งแต่ 1 ถึง 50 คำ (ค่าเริ่มต้น 10 คำ) พร้อมปุ่มเลือกจำนวนด่วน (5, 10, 15, 20, 30, 50)
+  - **Quick Topic Chips**: หัวข้อแนะนำ เช่น ✈️ การท่องเที่ยวสนามบิน, 💼 การประชุมธุรกิจ, 🌿 สัตว์ป่าและสิ่งแวดล้อม, 🍳 ร้านอาหารและอาหาร, 🏥 การแพทย์และสุขภาพ
+  - **Strict Scope & Guardrails**: บังคับให้ AI ส่งกลับเฉพาะโครงสร้าง JSON ของรายการคำศัพท์ภาษาอังกฤษ-ไทย ไม่ตอบคำถามนอกเรื่อง ไม่เขียนบทความ และบังคับแยก `word_th` (ความหมาย) กับ `reading_th` (คำอ่านไทย) ตามมาตรฐานสัทศาสตร์
+  - **Interactive Draft Review**: หน้าจอตรวจทานผลลัพธ์ ติ๊กเลือก/ไม่เลือก แก้ไขคำ inline หรือดูตัวอย่างประโยคก่อนกด Import เข้า Set
+
+---
+
+## 3. Duplicate Word Prevention System
+- **Single Word Add**: ตรวจสอบคำภาษาอังกฤษแบบ Real-time หากมีอยู่ใน Set แล้ว จะแสดงแถบแจ้งเตือน `⚠️ คำว่า "..." มีอยู่ในชุดคำศัพท์นี้แล้ว` และปิดการกดบันทึก
+- **AI Prompt & Photo Scan**:
+  - ส่งรายการคำศัพท์ที่มีอยู่เดิมให้ AI รับรู้เพื่อหลีกเลี่ยงการสร้างคำซ้ำ
+  - เมื่อได้รับผลลัพธ์ จะตรวจสอบซ้ำอีกชั้นและแสดง Badge `⚠️ มีแล้วในชุดนี้` พร้อม Uncheck คำซ้ำให้อัตโนมัติ
+- **Data Layer Validation**: ตรวจสอบซ้ำก่อน `insert` ลง Supabase ใน `handleAddWord` และ `handleBatchAddWords`
+
+---
+
+## 4. Mobile Responsive & Typography Polish
+- ปรับขนาดฟอนต์บนหน้าจอมือถือ: คำศัพท์ภาษาอังกฤษ (`text-base sm:text-lg md:text-xl`), คำอ่านไทย (`text-[11px] sm:text-xs`), ความหมายภาษาไทย (`text-sm sm:text-base`), ตัวอย่างประโยค (`text-xs`)
+- จัดการ Padding, Gap, และ Flex-wrap ป้องกันปัญหาข้อความล้นขอบจอขนาดเล็ก
+- รองรับปุ่ม Add Word แบบ Floating บนมือถือ
