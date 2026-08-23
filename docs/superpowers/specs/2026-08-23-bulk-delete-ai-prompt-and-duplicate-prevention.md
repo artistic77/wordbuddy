@@ -43,3 +43,28 @@
 - ปรับขนาดฟอนต์บนหน้าจอมือถือ: คำศัพท์ภาษาอังกฤษ (`text-base sm:text-lg md:text-xl`), คำอ่านไทย (`text-[11px] sm:text-xs`), ความหมายภาษาไทย (`text-sm sm:text-base`), ตัวอย่างประโยค (`text-xs`)
 - จัดการ Padding, Gap, และ Flex-wrap ป้องกันปัญหาข้อความล้นขอบจอขนาดเล็ก
 - รองรับปุ่ม Add Word แบบ Floating บนมือถือ
+
+---
+
+## 5. Production Deployment & Live Verification
+- **Environment**: Azure Static Web Apps (Production)
+- **Live URL**: `https://brave-river-0a45ec400.7.azurestaticapps.net`
+- **Git Commits**:
+  - `0d83bd3`: `feat(vocab): add bulk delete, AI prompt generation (max 50 words), duplicate word prevention, and mobile UI enhancements`
+  - `b7ae954`: `docs: record 2026-08-23 spec (Bulk Delete, AI Prompt Generator, Duplicate Prevention, Mobile UI)`
+- **Branches**: `develop` และ `main` ซิงค์เท่ากัน 100%
+
+---
+
+## 6. Next Session Roadmap & Backlog (แผนงานสำหรับรอบถัดไป)
+1. **Gamification / Pet Battle & Sanctuary (`PetSanctuaryPage.tsx`, `PetShopPage.tsx`)**:
+   - เพิ่มระบบไอเทมในร้านค้า (Pet Shop) และการซื้ออาหาร/ยาเพิ่มพลัง
+   - ระบบเพิ่มเลเวล (EXP) และ Evolution ของสัตว์เลี้ยงเมื่อเล่นเกมคำศัพท์ชนะ
+   - Boss Battle โหมดฝึกฝนคำศัพท์แบบกำหนดเวลา (Speed Quiz / Boss Encounter)
+2. **Advanced Study & Spaced Repetition (SRS)**:
+   - ระบบจดจำคำศัพท์ที่ตอบผิดบ่อย (Review Weak Words)
+   - ระบบการแจ้งเตือนทบทวนตามหลัก Spaced Repetition (1 วัน, 3 วัน, 7 วัน)
+3. **Data Import & Export**:
+   - Export ชุดคำศัพท์เป็น CSV / Excel / PDF Flashcard Printout
+   - Import ไฟล์ CSV ชุดคำศัพท์เข้ามาในระบบแบบ Batch
+
