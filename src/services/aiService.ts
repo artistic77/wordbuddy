@@ -183,7 +183,7 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
       const prompt = `You are a world-class English-Thai educational linguist and phonetic specialist.
 Given the English word "${word}", provide:
 1. Natural Thai translation ("word_th")
-2. Accurate standard Thai phonetic reading ("reading_th", following natural English IPA pronunciation, e.g. "chicken" -> "ชิกเก้น", "perimeter" -> "เพอริมิเทอร์", "method" -> "เมธอด", "bat" -> "แบท", "project" -> "โพรเจ็คท์")
+2. Accurate standard Thai phonetic reading ("reading_th", following natural English IPA pronunciation, e.g. "bat" -> "แบท", "girl" -> "เกิร์ล", "bird" -> "เบิร์ด", "world" -> "เวิลด์", "chicken" -> "ชิกเก้น", "perimeter" -> "เพอริมิเทอร์", "method" -> "เมธอด", "project" -> "โพรเจ็คท์")
 3. Part of speech ("noun", "verb", "adj", "adv", "gerund", "past_participle", or "other")
 4. Simple educational English example sentence ("example_sentence_en")
 5. Thai translation of the example sentence ("example_sentence_th")

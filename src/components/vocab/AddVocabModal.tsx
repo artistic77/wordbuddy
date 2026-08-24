@@ -221,7 +221,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
       const payload = selectedWords.map((w) => ({
         word_en: w.word_en.trim(),
         word_th: w.word_th.trim(),
-        reading_th: w.reading_th?.trim(),
+        reading_th: w.reading_th?.trim() || getThaiPhonetic(w.word_en.trim()),
         part_of_speech: w.part_of_speech,
         example_sentence_en: w.example_sentence_en.trim(),
         example_sentence_th: w.example_sentence_th.trim(),
@@ -354,10 +354,11 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     setIsSaving(true);
     setError(null);
     try {
+      const finalReading = readingTh.trim() || getThaiPhonetic(wordEn.trim());
       await onSave({
         word_en: wordEn.trim(),
         word_th: wordTh.trim(),
-        reading_th: readingTh.trim(),
+        reading_th: finalReading,
         part_of_speech: partOfSpeech,
         example_sentence_en: exampleEn.trim(),
         example_sentence_th: exampleTh.trim(),
@@ -392,7 +393,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
       const payload = selectedWords.map((w) => ({
         word_en: w.word_en.trim(),
         word_th: w.word_th.trim(),
-        reading_th: w.reading_th?.trim(),
+        reading_th: w.reading_th?.trim() || getThaiPhonetic(w.word_en.trim()),
         part_of_speech: w.part_of_speech,
         example_sentence_en: w.example_sentence_en.trim(),
         example_sentence_th: w.example_sentence_th.trim(),

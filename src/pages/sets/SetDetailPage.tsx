@@ -124,6 +124,7 @@ export const SetDetailPage: React.FC = () => {
       return;
     }
 
+    const reading = entry.reading_th?.trim() || getThaiPhonetic(entry.word_en);
     const { data, error } = await supabase
       .from('vocab_entries')
       .insert({
@@ -131,7 +132,7 @@ export const SetDetailPage: React.FC = () => {
         owner_id: user.id,
         word_en: entry.word_en,
         word_th: entry.word_th,
-        audio_url: entry.reading_th ? `reading_th:${entry.reading_th}` : null,
+        audio_url: reading ? `reading_th:${reading}` : null,
         part_of_speech: entry.part_of_speech,
         example_sentence_en: entry.example_sentence_en,
         example_sentence_th: entry.example_sentence_th,
@@ -166,16 +167,19 @@ export const SetDetailPage: React.FC = () => {
       return;
     }
 
-    const payload = filtered.map((e) => ({
-      set_id: set.id,
-      owner_id: user.id,
-      word_en: e.word_en,
-      word_th: e.word_th,
-      audio_url: e.reading_th ? `reading_th:${e.reading_th}` : null,
-      part_of_speech: e.part_of_speech,
-      example_sentence_en: e.example_sentence_en,
-      example_sentence_th: e.example_sentence_th,
-    }));
+    const payload = filtered.map((e) => {
+      const reading = e.reading_th?.trim() || getThaiPhonetic(e.word_en);
+      return {
+        set_id: set.id,
+        owner_id: user.id,
+        word_en: e.word_en,
+        word_th: e.word_th,
+        audio_url: reading ? `reading_th:${reading}` : null,
+        part_of_speech: e.part_of_speech,
+        example_sentence_en: e.example_sentence_en,
+        example_sentence_th: e.example_sentence_th,
+      };
+    });
 
     const { data, error } = await supabase
       .from('vocab_entries')
@@ -256,12 +260,13 @@ export const SetDetailPage: React.FC = () => {
     example_sentence_th: string;
   }) => {
     try {
+      const reading = updated.reading_th?.trim() || getThaiPhonetic(updated.word_en);
       const { data, error } = await supabase
         .from('vocab_entries')
         .update({
           word_en: updated.word_en,
           word_th: updated.word_th,
-          audio_url: `reading_th:${updated.reading_th}`,
+          audio_url: reading ? `reading_th:${reading}` : null,
           part_of_speech: updated.part_of_speech,
           example_sentence_en: updated.example_sentence_en,
           example_sentence_th: updated.example_sentence_th,

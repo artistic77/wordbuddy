@@ -82,6 +82,15 @@ For any given English vocabulary word or phrase, you MUST provide accurate bilin
 
 STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
 1. Follow natural spoken English phonetics (IPA stress & vowel quality):
+   - "bat" -> "แบท"
+   - "girl" -> "เกิร์ล"
+   - "bird" -> "เบิร์ด"
+   - "world" -> "เวิลด์"
+   - "walk" -> "วอล์ค"
+   - "water" -> "วอเทอร์"
+   - "morning" -> "มอร์นิ่ง"
+   - "afternoon" -> "อาฟเตอร์นูน"
+   - "family" -> "แฟมิลี่"
    - "chicken" -> "ชิกเก้น" (NOT "ชิคเกิน", NOT "ชิเคน")
    - "perimeter" -> "เพอริมิเทอร์" or "เพอริมมิเตอร์" (NOT "พีริมิเทอร์")
    - "quadrilateral" -> "ควอดริแลเทอรอล" or "ควอดริแลทเทอรัล"
@@ -103,6 +112,7 @@ STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
    - "pattern" -> "แพทเทิร์น"
 
 2. Use correct Thai vowel and consonant symbols:
+   - R-controlled vowels: /ɜːr/ -> "เ...ิ...ร์..." (e.g. girl -> เกิร์ล, bird -> เบิร์ด, shirt -> เชิร์ต, nurse -> เนิร์ส, turn -> เทิร์น, world -> เวิลด์)
    - Final /st/ -> "สต์" (e.g. nest -> เนสต์, heaviest -> เฮฟวิเอสต์)
    - Final /tʃ/ -> "ทช์" or "ช์" (e.g. hatch -> แฮทช์, watch -> วอทช์)
    - Final /d/ or /dz/ -> "ด" or "ดส์" (e.g. seeds -> ซีดส์)
@@ -184,6 +194,15 @@ For each given English vocabulary word or phrase, you MUST provide accurate bili
 
 STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
 1. Follow natural spoken English phonetics (IPA stress & vowel quality):
+   - "bat" -> "แบท"
+   - "girl" -> "เกิร์ล"
+   - "bird" -> "เบิร์ด"
+   - "world" -> "เวิลด์"
+   - "walk" -> "วอล์ค"
+   - "water" -> "วอเทอร์"
+   - "morning" -> "มอร์นิ่ง"
+   - "afternoon" -> "อาฟเตอร์นูน"
+   - "family" -> "แฟมิลี่"
    - "chicken" -> "ชิกเก้น" (NOT "ชิคเกิน", NOT "ชิเคน")
    - "perimeter" -> "เพอริมิเทอร์" or "เพอริมมิเตอร์" (NOT "พีริมิเทอร์")
    - "quadrilateral" -> "ควอดริแลเทอรอล" or "ควอดริแลทเทอรัล"
@@ -205,6 +224,7 @@ STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
    - "pattern" -> "แพทเทิร์น"
 
 2. Use correct Thai vowel and consonant symbols:
+   - R-controlled vowels: /ɜːr/ -> "เ...ิ...ร์..." (e.g. girl -> เกิร์ล, bird -> เบิร์ด, shirt -> เชิร์ต, nurse -> เนิร์ส, turn -> เทิร์น, world -> เวิลด์)
    - Final /st/ -> "สต์" (e.g. nest -> เนสต์, heaviest -> เฮฟวิเอสต์)
    - Final /tʃ/ -> "ทช์" or "ช์" (e.g. hatch -> แฮทช์, watch -> วอทช์)
    - Final /d/ or /dz/ -> "ด" or "ดส์" (e.g. seeds -> ซีดส์)
@@ -399,7 +419,7 @@ CRITICAL GUARDRAILS & SCOPE LIMITATION:
 STRICT BILINGUAL & PHONETIC SCHEMA RULES:
 - "word_en": The English vocabulary word or standard collocation (lowercase/standard case).
 - "word_th": Accurate, natural Thai MEANING / TRANSLATION ONLY. (NO phonetic transliteration here).
-- "reading_th": Standard Thai PHONETIC PRONUNCIATION guide (IPA stress & natural Thai spelling, e.g. "chicken" -> "ชิกเก้น", "nest" -> "เนสต์", "diligent" -> "ดิลิเจินท์"). (NO meaning here).
+- "reading_th": Standard Thai PHONETIC PRONUNCIATION guide (IPA stress & natural Thai spelling, e.g. "bat" -> "แบท", "girl" -> "เกิร์ล", "bird" -> "เบิร์ด", "world" -> "เวิลด์", "chicken" -> "ชิกเก้น", "nest" -> "เนสต์", "diligent" -> "ดิลิเจินท์"). (NO meaning here).
 - "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"].
 - "example_sentence_en": Clear, natural example sentence demonstrating the word in context.
 - "example_sentence_th": Natural Thai translation of the example sentence.
