@@ -9,7 +9,7 @@ import {
   type ExtractedVocabSheet,
 } from './azureOpenAIService';
 import { translateWithAzure, batchTranslateWithAzure, isAzureTranslatorConfigured } from './azureTranslatorService';
-import { getThaiPhonetic } from './phoneticService';
+import { getThaiPhonetic, COMMON_PHONETICS } from './phoneticService';
 import type { PartOfSpeech, TranslationResponse } from '../types';
 
 export type { ExtractedVocabSheet };
@@ -169,7 +169,7 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
       const azResult = await translateWithAzure(word.trim(), 'en', 'th');
       return {
         ...azResult,
-        reading_th: azResult.reading_th || getThaiPhonetic(cleanWord),
+        reading_th: COMMON_PHONETICS[cleanWord] || azResult.reading_th || getThaiPhonetic(cleanWord),
       };
     } catch (err) {
       console.warn('Azure Translator call failed, trying Gemini fallback:', err);
@@ -183,7 +183,7 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
       const prompt = `You are a world-class English-Thai educational linguist and phonetic specialist.
 Given the English word "${word}", provide:
 1. Natural Thai translation ("word_th")
-2. Accurate standard Thai phonetic reading ("reading_th", following natural English IPA pronunciation, e.g. "bat" -> "แบท", "girl" -> "เกิร์ล", "bird" -> "เบิร์ด", "world" -> "เวิลด์", "chicken" -> "ชิกเก้น", "perimeter" -> "เพอริมิเทอร์", "method" -> "เมธอด", "project" -> "โพรเจ็คท์")
+2. Accurate standard Thai phonetic reading ("reading_th", following natural English IPA pronunciation, e.g. "january" -> "แจนยัวรี่", "march" -> "มาร์ช", "august" -> "ออกัสต์", "bat" -> "แบท", "girl" -> "เกิร์ล", "bird" -> "เบิร์ด", "world" -> "เวิลด์", "chicken" -> "ชิกเก้น", "method" -> "เมธอด")
 3. Part of speech ("noun", "verb", "adj", "adv", "gerund", "past_participle", or "other")
 4. Simple educational English example sentence ("example_sentence_en")
 5. Thai translation of the example sentence ("example_sentence_th")
@@ -214,7 +214,11 @@ Respond ONLY with valid JSON:
         const data = await res.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) {
-          return JSON.parse(text.trim());
+          const parsed = JSON.parse(text.trim());
+          return {
+            ...parsed,
+            reading_th: COMMON_PHONETICS[cleanWord] || parsed.reading_th || getThaiPhonetic(cleanWord),
+          };
         }
       }
     } catch (err) {
@@ -226,7 +230,7 @@ Respond ONLY with valid JSON:
   return {
     word_en: word.trim(),
     word_th: `คำศัพท์: ${word.trim()}`,
-    reading_th: getThaiPhonetic(cleanWord),
+    reading_th: COMMON_PHONETICS[cleanWord] || getThaiPhonetic(cleanWord),
     part_of_speech: 'noun' as PartOfSpeech,
     example_sentence_en: `We are learning how to use the word "${word.trim()}".`,
     example_sentence_th: `เรากำลังเรียนรู้วิธีการใช้คำว่า "${word.trim()}".`,

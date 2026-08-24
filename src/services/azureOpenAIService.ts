@@ -4,6 +4,7 @@
 // ==============================================================================
 
 import type { TranslationResponse, PartOfSpeech } from '../types';
+import { COMMON_PHONETICS, getThaiPhonetic } from './phoneticService';
 
 const DEFAULT_AZURE_OPENAI_ENDPOINT = 'https://artistic77-1198-resource.services.ai.azure.com';
 const DEFAULT_AZURE_OPENAI_KEY_B64 = 'VGpJamZmcElPRG5xSEp5ZkV1QlBvQVdIYUdQZk44ZlZoV2lZV2JZamxCNXhIZ1F1QTlaWkpRUUo5OUNIQUNNc2ZyRlhKM3czQUFBQUFDT0dFWHBH';
@@ -82,6 +83,18 @@ For any given English vocabulary word or phrase, you MUST provide accurate bilin
 
 STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
 1. Follow natural spoken English phonetics (IPA stress & vowel quality):
+   - "january" -> "แจนยัวรี่" (Meaning: "เดือนมกราคม")
+   - "february" -> "เฟบรัวรี่" (Meaning: "เดือนกุมภาพันธ์")
+   - "march" -> "มาร์ช" (Meaning: "เดือนมีนาคม")
+   - "april" -> "เอพริล" (Meaning: "เดือนเมษายน")
+   - "may" -> "เมย์" (Meaning: "เดือนพฤษภาคม")
+   - "june" -> "จูน" (Meaning: "เดือนมิถุนายน")
+   - "july" -> "จูลาย" (Meaning: "เดือนกรกฎาคม")
+   - "august" -> "ออกัสต์" (Meaning: "เดือนสิงหาคม")
+   - "september" -> "เซปเทมเบอร์" (Meaning: "เดือนกันยายน")
+   - "october" -> "อ็อกโทเบอร์" (Meaning: "เดือนตุลาคม")
+   - "november" -> "โนเวมเบอร์" (Meaning: "เดือนพฤศจิกายน")
+   - "december" -> "ดิเซมเบอร์" (Meaning: "เดือนธันวาคม")
    - "bat" -> "แบท"
    - "girl" -> "เกิร์ล"
    - "bird" -> "เบิร์ด"
@@ -93,20 +106,6 @@ STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
    - "family" -> "แฟมิลี่"
    - "chicken" -> "ชิกเก้น" (NOT "ชิคเกิน", NOT "ชิเคน")
    - "perimeter" -> "เพอริมิเทอร์" or "เพอริมมิเตอร์" (NOT "พีริมิเทอร์")
-   - "quadrilateral" -> "ควอดริแลเทอรอล" or "ควอดริแลทเทอรัล"
-   - "parallelogram" -> "แพแรลเลโลแกรม"
-   - "trapezium" -> "ทราพีเซียม" or "ทระพีเซียม"
-   - "diagonal" -> "ไดแอกกะนอล" or "ไดแอกโกนอล"
-   - "heaviest" -> "เฮฟวิเอสต์" or "เฮฟวี่เอสต์"
-   - "rhombus" -> "รอมบัส"
-   - "project" -> "โพรเจ็คท์"
-   - "seeds" -> "ซีดส์"
-   - "nest" -> "เนสต์"
-   - "hatch" -> "แฮทช์"
-   - "chick" -> "ชิค"
-   - "hen" -> "เฮน"
-   - "urban" -> "เออร์บัน"
-   - "arcology" -> "อาร์โคโลจี"
    - "method" -> "เมธอด"
    - "schedule" -> "สเกดจูล"
    - "pattern" -> "แพทเทิร์น"
@@ -157,10 +156,16 @@ Respond ONLY with valid JSON matching this schema:
   }
 
   const parsed = JSON.parse(content);
+  const wordClean = parsed.word_en || cleanWord;
+  const wordLower = wordClean.toLowerCase();
+  const rawReading = String(parsed.reading_th || '').trim();
+  const rawMeaning = String(parsed.word_th || cleanWord).trim();
+  const validReading = COMMON_PHONETICS[wordLower] || (rawReading && rawReading !== rawMeaning ? rawReading : getThaiPhonetic(wordClean));
+
   return {
-    word_en: parsed.word_en || cleanWord,
-    word_th: parsed.word_th || cleanWord,
-    reading_th: parsed.reading_th || '',
+    word_en: wordClean,
+    word_th: rawMeaning,
+    reading_th: validReading,
     part_of_speech: (parsed.part_of_speech as PartOfSpeech) || 'noun',
     example_sentence_en: parsed.example_sentence_en || '',
     example_sentence_th: parsed.example_sentence_th || '',
@@ -194,6 +199,18 @@ For each given English vocabulary word or phrase, you MUST provide accurate bili
 
 STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
 1. Follow natural spoken English phonetics (IPA stress & vowel quality):
+   - "january" -> "แจนยัวรี่" (Meaning: "เดือนมกราคม")
+   - "february" -> "เฟบรัวรี่" (Meaning: "เดือนกุมภาพันธ์")
+   - "march" -> "มาร์ช" (Meaning: "เดือนมีนาคม")
+   - "april" -> "เอพริล" (Meaning: "เดือนเมษายน")
+   - "may" -> "เมย์" (Meaning: "เดือนพฤษภาคม")
+   - "june" -> "จูน" (Meaning: "เดือนมิถุนายน")
+   - "july" -> "จูลาย" (Meaning: "เดือนกรกฎาคม")
+   - "august" -> "ออกัสต์" (Meaning: "เดือนสิงหาคม")
+   - "september" -> "เซปเทมเบอร์" (Meaning: "เดือนกันยายน")
+   - "october" -> "อ็อกโทเบอร์" (Meaning: "เดือนตุลาคม")
+   - "november" -> "โนเวมเบอร์" (Meaning: "เดือนพฤศจิกายน")
+   - "december" -> "ดิเซมเบอร์" (Meaning: "เดือนธันวาคม")
    - "bat" -> "แบท"
    - "girl" -> "เกิร์ล"
    - "bird" -> "เบิร์ด"
@@ -205,20 +222,6 @@ STRICT RULES FOR THAI PHONETIC PRONUNCIATION ("reading_th"):
    - "family" -> "แฟมิลี่"
    - "chicken" -> "ชิกเก้น" (NOT "ชิคเกิน", NOT "ชิเคน")
    - "perimeter" -> "เพอริมิเทอร์" or "เพอริมมิเตอร์" (NOT "พีริมิเทอร์")
-   - "quadrilateral" -> "ควอดริแลเทอรอล" or "ควอดริแลทเทอรัล"
-   - "parallelogram" -> "แพแรลเลโลแกรม"
-   - "trapezium" -> "ทราพีเซียม" or "ทระพีเซียม"
-   - "diagonal" -> "ไดแอกกะนอล" or "ไดแอกโกนอล"
-   - "heaviest" -> "เฮฟวิเอสต์" or "เฮฟวี่เอสต์"
-   - "rhombus" -> "รอมบัส"
-   - "project" -> "โพรเจ็คท์"
-   - "seeds" -> "ซีดส์"
-   - "nest" -> "เนสต์"
-   - "hatch" -> "แฮทช์"
-   - "chick" -> "ชิค"
-   - "hen" -> "เฮน"
-   - "urban" -> "เออร์บัน"
-   - "arcology" -> "อาร์โคโลจี"
    - "method" -> "เมธอด"
    - "schedule" -> "สเกดจูล"
    - "pattern" -> "แพทเทิร์น"
@@ -268,7 +271,22 @@ Respond ONLY with valid JSON:
       if (content) {
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed.items) && parsed.items.length > 0) {
-          return parsed.items as TranslationResponse[];
+          return parsed.items.map((item: any) => {
+            const wordClean = String(item.word_en || '').trim();
+            const wordLower = wordClean.toLowerCase();
+            const rawReading = String(item.reading_th || '').trim();
+            const rawMeaning = String(item.word_th || wordClean).trim();
+            const validReading = COMMON_PHONETICS[wordLower] || (rawReading && rawReading !== rawMeaning ? rawReading : getThaiPhonetic(wordClean));
+
+            return {
+              word_en: wordClean,
+              word_th: rawMeaning,
+              reading_th: validReading,
+              part_of_speech: (item.part_of_speech as PartOfSpeech) || 'noun',
+              example_sentence_en: String(item.example_sentence_en || '').trim(),
+              example_sentence_th: String(item.example_sentence_th || '').trim(),
+            };
+          });
         }
       }
     }
@@ -419,7 +437,7 @@ CRITICAL GUARDRAILS & SCOPE LIMITATION:
 STRICT BILINGUAL & PHONETIC SCHEMA RULES:
 - "word_en": The English vocabulary word or standard collocation (lowercase/standard case).
 - "word_th": Accurate, natural Thai MEANING / TRANSLATION ONLY. (NO phonetic transliteration here).
-- "reading_th": Standard Thai PHONETIC PRONUNCIATION guide (IPA stress & natural Thai spelling, e.g. "bat" -> "แบท", "girl" -> "เกิร์ล", "bird" -> "เบิร์ด", "world" -> "เวิลด์", "chicken" -> "ชิกเก้น", "nest" -> "เนสต์", "diligent" -> "ดิลิเจินท์"). (NO meaning here).
+- "reading_th": Standard Thai PHONETIC PRONUNCIATION guide (IPA stress & natural Thai spelling, e.g. "january" -> "แจนยัวรี่", "march" -> "มาร์ช", "august" -> "ออกัสต์", "bat" -> "แบท", "girl" -> "เกิร์ล", "bird" -> "เบิร์ด", "world" -> "เวิลด์", "chicken" -> "ชิกเก้น", "nest" -> "เนสต์", "diligent" -> "ดิลิเจินท์"). (CRITICAL: NEVER put Thai meaning like "เดือนมกราคม" in reading_th).
 - "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"].
 - "example_sentence_en": Clear, natural example sentence demonstrating the word in context.
 - "example_sentence_th": Natural Thai translation of the example sentence.
@@ -485,10 +503,14 @@ Respond ONLY with valid JSON matching this schema:
     if (!wordEn || seen.has(wordLower)) continue;
     seen.add(wordLower);
 
+    const rawReading = String(item.reading_th || '').trim();
+    const rawMeaning = String(item.word_th || wordEn).trim();
+    const validReading = COMMON_PHONETICS[wordLower] || (rawReading && rawReading !== rawMeaning ? rawReading : getThaiPhonetic(wordEn));
+
     results.push({
       word_en: wordEn,
-      word_th: String(item.word_th || wordEn).trim(),
-      reading_th: String(item.reading_th || '').trim(),
+      word_th: rawMeaning,
+      reading_th: validReading,
       part_of_speech: (item.part_of_speech as PartOfSpeech) || 'noun',
       example_sentence_en: String(item.example_sentence_en || '').trim(),
       example_sentence_th: String(item.example_sentence_th || '').trim(),
