@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Globe, BookOpen, Copy, Check, Sparkles } from 'lucide-react';
+import { Search, Globe, BookOpen, Copy, Check, Sparkles, Star, Play } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { favoriteService } from '../../services/favoriteService';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -19,6 +20,8 @@ export const ExplorePage: React.FC = () => {
   const navigate = useNavigate();
 
   const [publicSets, setPublicSets] = useState<PublicSetWithAuthor[]>([]);
+  const [favoriteSetIds, setFavoriteSetIds] = useState<Set<string>>(new Set());
+  const [togglingFavId, setTogglingFavId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedSetId, setCopiedSetId] = useState<string | null>(null);
@@ -56,6 +59,12 @@ export const ExplorePage: React.FC = () => {
       }));
 
       setPublicSets(enriched);
+
+      // 4. Fetch user's favorite set IDs
+      if (user) {
+        const favIds = await favoriteService.getUserFavoriteSetIds(user.id);
+        setFavoriteSetIds(favIds);
+      }
     } catch (err) {
       console.error('Error fetching public sets:', err);
     } finally {
@@ -65,7 +74,32 @@ export const ExplorePage: React.FC = () => {
 
   useEffect(() => {
     fetchPublicSets();
-  }, []);
+  }, [user]);
+
+  const handleToggleFavorite = async (setId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!user) {
+      navigate('/auth/login');
+      return;
+    }
+
+    const isCurrentlyFav = favoriteSetIds.has(setId);
+    setTogglingFavId(setId);
+    try {
+      const nextIsFav = await favoriteService.toggleFavoriteSet(user.id, setId, isCurrentlyFav);
+      setFavoriteSetIds((prev) => {
+        const next = new Set(prev);
+        if (nextIsFav) next.add(setId);
+        else next.delete(setId);
+        return next;
+      });
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    } finally {
+      setTogglingFavId(null);
+    }
+  };
 
   const handleCopySet = async (targetSet: PublicSetWithAuthor, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -103,6 +137,7 @@ export const ExplorePage: React.FC = () => {
           owner_id: user.id,
           word_en: entry.word_en,
           word_th: entry.word_th,
+          audio_url: entry.audio_url,
           part_of_speech: entry.part_of_speech,
           example_sentence_en: entry.example_sentence_en,
           example_sentence_th: entry.example_sentence_th,
@@ -115,6 +150,7 @@ export const ExplorePage: React.FC = () => {
       setTimeout(() => setCopiedSetId(null), 2500);
     } catch (err) {
       console.error('Failed to copy set:', err);
+      alert('Failed to copy set.');
     }
   };
 
@@ -125,7 +161,7 @@ export const ExplorePage: React.FC = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
       {/* Header */}
       <div className="space-y-1">
         <div className="flex items-center gap-2">
@@ -135,7 +171,7 @@ export const ExplorePage: React.FC = () => {
           </h1>
         </div>
         <p className="text-text-secondary">
-          Discover public vocabulary sets shared by other students and copy them directly to your personal collection.
+          Discover public vocabulary sets shared by other students. Favorite them to practice anytime or copy directly to your collection.
         </p>
       </div>
 
@@ -170,55 +206,83 @@ export const ExplorePage: React.FC = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSets.map((set) => (
-            <Link key={set.id} to={`/sets/${set.id}`} className="block group">
-              <Card hoverEffect className="h-full flex flex-col justify-between p-6">
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h3 className="text-lg font-outfit font-bold text-text-primary group-hover:text-primary transition-colors line-clamp-1">
-                      {set.title}
-                    </h3>
-                    <Badge variant="adj" size="sm">
-                      <Globe className="w-3 h-3 mr-1" /> Public
-                    </Badge>
+          {filteredSets.map((set) => {
+            const isFav = favoriteSetIds.has(set.id);
+            return (
+              <Link key={set.id} to={`/sets/${set.id}`} className="block group">
+                <Card hoverEffect className="h-full flex flex-col justify-between p-6">
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h3 className="text-lg font-outfit font-bold text-text-primary group-hover:text-primary transition-colors line-clamp-1">
+                        {set.title}
+                      </h3>
+
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* Favorite button */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleFavorite(set.id, e)}
+                          disabled={togglingFavId === set.id}
+                          className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                            isFav
+                              ? 'bg-amber-50 border-amber-300 text-amber-500 hover:bg-amber-100 shadow-sm'
+                              : 'bg-white border-border text-gray-400 hover:text-amber-500 hover:border-amber-300'
+                          }`}
+                          title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          <Star className={`w-4 h-4 ${isFav ? 'fill-amber-400 text-amber-500' : ''}`} />
+                        </button>
+
+                        <Badge variant="adj" size="sm">
+                          <Globe className="w-3 h-3 mr-1" /> Public
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-text-secondary line-clamp-2 min-h-[32px] mb-4">
+                      {set.description || 'Community vocabulary set.'}
+                    </p>
+
+                    <p className="text-xs text-text-muted">
+                      Created by: <span className="font-medium text-text-secondary">{set.authorName}</span>
+                    </p>
                   </div>
 
-                  <p className="text-xs text-text-secondary line-clamp-2 min-h-[32px] mb-4">
-                    {set.description || 'Community vocabulary set.'}
-                  </p>
+                  <div className="pt-4 border-t border-border flex items-center justify-between mt-4">
+                    <Badge variant="noun" size="sm">
+                      <BookOpen className="w-3 h-3 mr-1" />
+                      {set.wordCount || 0} words
+                    </Badge>
 
-                  <p className="text-xs text-text-muted">
-                    Created by: <span className="font-medium text-text-secondary">{set.authorName}</span>
-                  </p>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant={copiedSetId === set.id ? 'success' : 'secondary'}
+                        size="sm"
+                        onClick={(e) => handleCopySet(set, e)}
+                        className="h-8 px-3 text-xs"
+                      >
+                        {copiedSetId === set.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 mr-1" /> Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+                          </>
+                        )}
+                      </Button>
 
-                <div className="pt-4 border-t border-border flex items-center justify-between mt-4">
-                  <Badge variant="noun" size="sm">
-                    <BookOpen className="w-3 h-3 mr-1" />
-                    {set.wordCount || 0} words
-                  </Badge>
-
-                  <Button
-                    type="button"
-                    variant={copiedSetId === set.id ? 'success' : 'secondary'}
-                    size="sm"
-                    onClick={(e) => handleCopySet(set, e)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    {copiedSetId === set.id ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 mr-1" /> Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 mr-1" /> Copy to Mine
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                      <Button variant="primary" size="sm" className="h-8 px-3 text-xs">
+                        <Play className="w-3 h-3 mr-1 fill-current" />
+                        Study
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

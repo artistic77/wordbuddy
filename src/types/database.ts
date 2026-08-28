@@ -205,6 +205,40 @@ export interface Database {
           }
         ];
       };
+      favorite_vocab_sets: {
+        Row: {
+          id: string;
+          user_id: string;
+          set_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          set_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          set_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'favorite_vocab_sets_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'favorite_vocab_sets_set_id_fkey';
+            columns: ['set_id'];
+            referencedRelation: 'vocab_sets';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -228,3 +262,4 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type VocabSet = Database['public']['Tables']['vocab_sets']['Row'];
 export type VocabEntry = Database['public']['Tables']['vocab_entries']['Row'];
 export type StudySession = Database['public']['Tables']['study_sessions']['Row'];
+export type FavoriteVocabSet = Database['public']['Tables']['favorite_vocab_sets']['Row'];

@@ -20,9 +20,13 @@ import {
   PenTool,
   CheckSquare,
   Square,
+  Star,
+  Copy,
+  User as UserIcon,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { favoriteService } from '../../services/favoriteService';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -39,6 +43,12 @@ export const SetDetailPage: React.FC = () => {
 
   const [set, setSet] = useState<VocabSet | null>(null);
   const [entries, setEntries] = useState<VocabEntry[]>([]);
+  const [authorName, setAuthorName] = useState<string | null>(null);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [isTogglingPrivacy, setIsTogglingPrivacy] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  const [copiedSuccess, setCopiedSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEntryForEdit, setSelectedEntryForEdit] = useState<VocabEntry | null>(null);
@@ -66,7 +76,25 @@ export const SetDetailPage: React.FC = () => {
       setSet(setData);
       setEditedTitle(setData.title);
 
-      // 2. Fetch vocab entries
+      // 2. Fetch author profile if not owned by user
+      if (setData.owner_id) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', setData.owner_id)
+          .single();
+        if (profileData) {
+          setAuthorName(profileData.display_name);
+        }
+      }
+
+      // 3. Fetch favorite status
+      if (user) {
+        const favIds = await favoriteService.getUserFavoriteSetIds(user.id);
+        setIsFavorited(favIds.has(id));
+      }
+
+      // 4. Fetch vocab entries
       const { data: entriesData, error: entriesErr } = await supabase
         .from('vocab_entries')
         .select('*')
@@ -86,7 +114,95 @@ export const SetDetailPage: React.FC = () => {
   useEffect(() => {
     fetchSetData();
     setSelectedIds(new Set());
-  }, [id]);
+  }, [id, user]);
+
+  const handleTogglePrivacy = async () => {
+    if (!set || user?.id !== set.owner_id) return;
+    const newPrivacy = !set.is_public;
+    const confirmMsg = newPrivacy
+      ? 'Make this set Public? Anyone will be able to discover, favorite, and study it.'
+      : 'Make this set Private? Only you will be able to view and study it.';
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsTogglingPrivacy(true);
+    try {
+      const { error } = await supabase
+        .from('vocab_sets')
+        .update({ is_public: newPrivacy })
+        .eq('id', set.id);
+
+      if (error) throw error;
+      setSet((prev) => (prev ? { ...prev, is_public: newPrivacy } : null));
+    } catch (err) {
+      console.error('Failed to toggle privacy:', err);
+      alert('Failed to update privacy setting.');
+    } finally {
+      setIsTogglingPrivacy(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!set || !user) {
+      navigate('/auth/login');
+      return;
+    }
+    setIsTogglingFavorite(true);
+    try {
+      const newFav = await favoriteService.toggleFavoriteSet(user.id, set.id, isFavorited);
+      setIsFavorited(newFav);
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
+
+  const handleCopySet = async () => {
+    if (!set || !user) {
+      navigate('/auth/login');
+      return;
+    }
+    setIsCopying(true);
+    try {
+      const { data: newSet, error: setErr } = await supabase
+        .from('vocab_sets')
+        .insert({
+          owner_id: user.id,
+          title: `${set.title} (Copy)`,
+          description: set.description,
+          is_public: false,
+        })
+        .select()
+        .single();
+
+      if (setErr || !newSet) throw setErr;
+
+      if (entries.length > 0) {
+        const cloned = entries.map((e) => ({
+          set_id: newSet.id,
+          owner_id: user.id,
+          word_en: e.word_en,
+          word_th: e.word_th,
+          audio_url: e.audio_url,
+          part_of_speech: e.part_of_speech,
+          example_sentence_en: e.example_sentence_en,
+          example_sentence_th: e.example_sentence_th,
+        }));
+        await supabase.from('vocab_entries').insert(cloned);
+      }
+
+      setCopiedSuccess(true);
+      setTimeout(() => {
+        setCopiedSuccess(false);
+        navigate(`/sets/${newSet.id}`);
+      }, 1000);
+    } catch (err) {
+      console.error('Failed to copy set:', err);
+      alert('Failed to copy set.');
+    } finally {
+      setIsCopying(false);
+    }
+  };
 
   const handleSaveTitle = async () => {
     if (!set || !editedTitle.trim()) return;
@@ -317,14 +433,49 @@ export const SetDetailPage: React.FC = () => {
                 <BookOpen className="w-3.5 h-3.5 mr-1" />
                 {entries.length} {entries.length === 1 ? 'word' : 'words'}
               </Badge>
-              {set.is_public ? (
-                <Badge variant="adj" size="sm">
-                  <Globe className="w-3.5 h-3.5 mr-1" /> Public
-                </Badge>
+
+              {/* Privacy badge: interactive for owner, informative for non-owners */}
+              {isOwner ? (
+                <button
+                  type="button"
+                  onClick={handleTogglePrivacy}
+                  disabled={isTogglingPrivacy}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-sm active:scale-95 ${
+                    set.is_public
+                      ? 'bg-accent-teal-light text-accent-teal border-accent-teal/30 hover:bg-accent-teal/20'
+                      : 'bg-gray-100 text-text-secondary border-gray-200 hover:bg-gray-200'
+                  }`}
+                  title="Click to toggle Public / Private"
+                >
+                  {set.is_public ? (
+                    <>
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Public (Click to make Private)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Private (Click to make Public)</span>
+                    </>
+                  )}
+                </button>
               ) : (
-                <Badge variant="other" size="sm">
-                  <Lock className="w-3.5 h-3.5 mr-1" /> Private
-                </Badge>
+                <>
+                  {set.is_public ? (
+                    <Badge variant="adj" size="sm">
+                      <Globe className="w-3.5 h-3.5 mr-1" /> Public
+                    </Badge>
+                  ) : (
+                    <Badge variant="other" size="sm">
+                      <Lock className="w-3.5 h-3.5 mr-1" /> Private
+                    </Badge>
+                  )}
+                  {authorName && (
+                    <Badge variant="default" size="sm" className="bg-slate-100 text-slate-700 border-slate-200">
+                      <UserIcon className="w-3.5 h-3.5 mr-1" /> by {authorName}
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
 
@@ -389,6 +540,53 @@ export const SetDetailPage: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Favorite Button (for authenticated users) */}
+            {user && (
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={handleToggleFavorite}
+                disabled={isTogglingFavorite}
+                className={`border transition-all ${
+                  isFavorited
+                    ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 shadow-sm'
+                    : 'hover:border-amber-400 hover:text-amber-600'
+                }`}
+                title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <Star
+                  className={`w-4 h-4 mr-1.5 ${
+                    isFavorited ? 'fill-amber-400 text-amber-500' : 'text-text-secondary'
+                  }`}
+                />
+                {isFavorited ? 'Favorited' : 'Favorite'}
+              </Button>
+            )}
+
+            {/* Copy Set Button for non-owners */}
+            {!isOwner && (
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={handleCopySet}
+                disabled={isCopying || copiedSuccess}
+                className="border-primary/20 hover:border-primary text-primary"
+              >
+                {copiedSuccess ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1.5 text-accent-green" />
+                    Copied to My Sets!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-1.5" />
+                    {isCopying ? 'Copying...' : 'Copy to My Sets'}
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Add Words for owners */}
             {isOwner && (
               <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-1" />
