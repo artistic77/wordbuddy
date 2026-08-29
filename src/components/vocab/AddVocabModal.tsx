@@ -44,14 +44,15 @@ export interface VocabEntryDraft {
   isDuplicate?: boolean;
 }
 
-interface AddVocabModalProps {
+export interface AddVocabModalProps {
   isOpen: boolean;
   onClose: () => void;
   existingWords?: string[];
+  initialTab?: 'type' | 'prompt' | 'photo';
   onSave: (entry: {
     word_en: string;
     word_th: string;
-    reading_th?: string;
+    reading_th: string;
     part_of_speech: PartOfSpeech;
     example_sentence_en: string;
     example_sentence_th: string;
@@ -60,7 +61,7 @@ interface AddVocabModalProps {
     entries: Array<{
       word_en: string;
       word_th: string;
-      reading_th?: string;
+      reading_th: string;
       part_of_speech: PartOfSpeech;
       example_sentence_en: string;
       example_sentence_th: string;
@@ -72,10 +73,28 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   isOpen,
   onClose,
   existingWords = [],
+  initialTab,
   onSave,
   onBatchSave,
 }) => {
-  const [activeTab, setActiveTab] = useState<'type' | 'prompt' | 'photo'>('type');
+  const [activeTab, setActiveTab] = useState<'type' | 'prompt' | 'photo'>(() => {
+    if (initialTab) return initialTab;
+    const saved = typeof window !== 'undefined' ? sessionStorage.getItem('add_vocab_modal_tab') : null;
+    if (saved === 'photo' || saved === 'prompt' || saved === 'type') {
+      return saved;
+    }
+    return 'type';
+  });
+
+  const handleTabChange = (tab: 'type' | 'prompt' | 'photo') => {
+    setActiveTab(tab);
+    try {
+      sessionStorage.setItem('add_vocab_modal_tab', tab);
+    } catch {
+      // ignore
+    }
+    setError(null);
+  };
 
   // Existing words set for instant duplicate lookup
   const existingSet = useMemo(() => {
@@ -255,6 +274,14 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   // --------------------------------------------------------------------------
   const handleProcessFile = async (file: File) => {
     if (!file) return;
+
+    // Ensure tab remains on photo scan
+    setActiveTab('photo');
+    try {
+      sessionStorage.setItem('add_vocab_modal_tab', 'photo');
+    } catch {
+      // ignore
+    }
 
     setError(null);
     setDetectedSheetTitle(null);
@@ -465,10 +492,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
           <div className="grid grid-cols-3 gap-1.5 p-1 bg-surface rounded-2xl border border-border mb-3 flex-shrink-0">
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('type');
-                setError(null);
-              }}
+              onClick={() => handleTabChange('type')}
               className={`py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs md:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 text-center ${
                 activeTab === 'type'
                   ? 'bg-white text-primary shadow-sm'
@@ -481,10 +505,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
 
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('prompt');
-                setError(null);
-              }}
+              onClick={() => handleTabChange('prompt')}
               className={`py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs md:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 text-center ${
                 activeTab === 'prompt'
                   ? 'bg-white text-primary shadow-sm'
@@ -497,10 +518,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
 
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('photo');
-                setError(null);
-              }}
+              onClick={() => handleTabChange('photo')}
               className={`py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs md:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 text-center ${
                 activeTab === 'photo'
                   ? 'bg-white text-primary shadow-sm'
