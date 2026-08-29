@@ -353,12 +353,13 @@ Respond ONLY with valid JSON matching this schema:
           content: [
             {
               type: 'text',
-              text: 'Please carefully analyze this image, understand its layout (such as tables or numbered columns), and extract all the vocabulary words and the list title in JSON format.',
+              text: 'Please carefully analyze this image, understand its layout (such as tables, cards, or numbered columns), and extract all the vocabulary words and the list title in JSON format.',
             },
             {
               type: 'image_url',
               image_url: {
                 url: imageUrl,
+                detail: 'high',
               },
             },
           ],
@@ -381,9 +382,20 @@ Respond ONLY with valid JSON matching this schema:
   }
 
   const parsed = JSON.parse(content);
-  const words: string[] = Array.isArray(parsed.words)
-    ? parsed.words.map((w: any) => String(w).trim()).filter(Boolean)
-    : [];
+  let rawWords: any[] = [];
+  if (Array.isArray(parsed.words)) {
+    rawWords = parsed.words;
+  } else if (Array.isArray(parsed.items)) {
+    rawWords = parsed.items.map((it: any) => (typeof it === 'string' ? it : it.word_en || it.word));
+  } else if (Array.isArray(parsed.vocabulary)) {
+    rawWords = parsed.vocabulary;
+  } else if (Array.isArray(parsed)) {
+    rawWords = parsed;
+  }
+
+  const words: string[] = rawWords
+    .map((w: any) => String(w).trim())
+    .filter((w) => w.length > 0 && !w.match(/^\d+$/));
 
   return {
     title: parsed.title ? String(parsed.title).trim() : undefined,

@@ -1035,9 +1035,10 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               {/* Hidden File Inputs */}
               <input
+                id="camera-upload-input"
                 ref={cameraInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 capture="environment"
                 className="hidden"
                 onChange={(e) => {
@@ -1047,9 +1048,10 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                 }}
               />
               <input
+                id="gallery-upload-input"
                 ref={galleryInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -1116,27 +1118,25 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                           </p>
                         </div>
 
-                        {/* Dual Action Buttons */}
+                        {/* Dual Action Native Labels/Buttons */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                           {/* 1. Take Photo (Camera) */}
-                          <button
-                            type="button"
-                            onClick={() => cameraInputRef.current?.click()}
-                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                          <label
+                            htmlFor="camera-upload-input"
+                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer select-none"
                           >
                             <Camera className="w-4 h-4 flex-shrink-0" />
                             <span>ถ่ายภาพทันที</span>
-                          </button>
+                          </label>
 
                           {/* 2. Upload Image (Gallery / Files) */}
-                          <button
-                            type="button"
-                            onClick={() => galleryInputRef.current?.click()}
-                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer"
+                          <label
+                            htmlFor="gallery-upload-input"
+                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none"
                           >
                             <ImageIcon className="w-4 h-4 flex-shrink-0" />
                             <span>เลือกรูปจากเครื่อง</span>
-                          </button>
+                          </label>
                         </div>
 
                         <p className="text-[11px] text-text-muted pt-1">

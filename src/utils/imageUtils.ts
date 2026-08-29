@@ -15,27 +15,56 @@ export interface ProcessedImage {
  * - Resizes max dimensions to `maxDimension` (default 1600px) preserving aspect ratio
  * - Compresses to standard JPEG with `quality` (default 0.85)
  * - Returns clean base64 data URL
+ * - Always falls back safely to original file base64 if canvas processing is not supported
  */
 export const processAndCompressImage = (
   file: File,
   maxDimension = 1600,
   quality = 0.85
 ): Promise<ProcessedImage> => {
-  return new Promise((resolve, reject) => {
-    // Validate file is an image
-    if (!file.type.startsWith('image/') && !file.name.match(/\.(jpe?g|png|webp|heic|bmp|gif)$/i)) {
-      reject(new Error('Selected file is not a supported image format.'));
-      return;
-    }
+  return new Promise((resolve) => {
+    console.log(`[Image Utils] Selected file: "${file.name}" | Size: ${(file.size / 1024).toFixed(1)} KB | Type: "${file.type}"`);
 
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error('Failed to read image file from device.'));
+
+    reader.onerror = () => {
+      console.warn('[Image Utils] FileReader failed to read file.');
+      resolve({
+        base64: '',
+        mimeType: file.type || 'image/jpeg',
+        width: 0,
+        height: 0,
+      });
+    };
+
     reader.onload = () => {
+      const rawBase64 = reader.result as string;
+
+      // Create an image element to attempt scaling & JPEG compression
       const img = new Image();
-      img.onerror = () => reject(new Error('Failed to load image data. Please try another picture.'));
+
+      img.onerror = (e) => {
+        console.warn('[Image Utils] HTML Image element failed to render (possibly HEIC/RAW or non-standard format). Falling back to direct raw base64:', e);
+        resolve({
+          base64: rawBase64,
+          mimeType: file.type || 'image/jpeg',
+          width: 0,
+          height: 0,
+        });
+      };
+
       img.onload = () => {
         try {
           let { width, height } = img;
+          if (width === 0 || height === 0) {
+            resolve({
+              base64: rawBase64,
+              mimeType: file.type || 'image/jpeg',
+              width: 0,
+              height: 0,
+            });
+            return;
+          }
 
           // Calculate scaled dimensions
           if (width > maxDimension || height > maxDimension) {
@@ -54,9 +83,9 @@ export const processAndCompressImage = (
 
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            // Fallback to original base64 if canvas 2D context fails
+            console.warn('[Image Utils] 2D canvas context unavailable, using original base64.');
             resolve({
-              base64: reader.result as string,
+              base64: rawBase64,
               mimeType: file.type || 'image/jpeg',
               width: img.width,
               height: img.height,
@@ -64,7 +93,7 @@ export const processAndCompressImage = (
             return;
           }
 
-          // Fill white background (useful for PNG transparent worksheets)
+          // Fill clean white background (useful for transparent PNGs)
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, width, height);
 
@@ -72,6 +101,8 @@ export const processAndCompressImage = (
           ctx.drawImage(img, 0, 0, width, height);
 
           const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          console.log(`[Image Utils] Successfully compressed image from ${(file.size / 1024).toFixed(1)} KB to ${width}x${height}px (Base64 length: ${compressedBase64.length})`);
+
           resolve({
             base64: compressedBase64,
             mimeType: 'image/jpeg',
@@ -79,17 +110,17 @@ export const processAndCompressImage = (
             height,
           });
         } catch (err) {
-          // If canvas compression fails, fallback safely to original base64
+          console.warn('[Image Utils] Canvas compression failed, falling back to raw base64:', err);
           resolve({
-            base64: reader.result as string,
+            base64: rawBase64,
             mimeType: file.type || 'image/jpeg',
-            width: img.width,
-            height: img.height,
+            width: img.width || 0,
+            height: img.height || 0,
           });
         }
       };
 
-      img.src = reader.result as string;
+      img.src = rawBase64;
     };
 
     reader.readAsDataURL(file);
