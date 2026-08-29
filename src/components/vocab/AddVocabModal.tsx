@@ -297,39 +297,57 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
 
       // 2. Extract vocabulary words & sheet title using Multimodal Vision AI
       const sheetResult = await extractVocabSheetFromImage(processed.base64, processed.mimeType);
-      const rawWords = sheetResult.words;
 
       if (sheetResult.title) {
         setDetectedSheetTitle(sheetResult.title);
       }
 
-      if (!rawWords || rawWords.length === 0) {
+      let drafts: VocabEntryDraft[] = [];
+
+      // Check if 1-shot full translations are returned directly by AI Vision
+      if (sheetResult.entries && sheetResult.entries.length > 0) {
+        drafts = sheetResult.entries.map((t, idx) => {
+          const isDup = existingSet.has(t.word_en.trim().toLowerCase());
+          return {
+            id: `draft-${idx}-${Date.now()}`,
+            word_en: t.word_en,
+            word_th: t.word_th,
+            reading_th: t.reading_th || getThaiPhonetic(t.word_en),
+            part_of_speech: t.part_of_speech || 'noun',
+            example_sentence_en: t.example_sentence_en || '',
+            example_sentence_th: t.example_sentence_th || '',
+            selected: !isDup,
+            isExpanded: false,
+            isDuplicate: isDup,
+          };
+        });
+      } else if (sheetResult.words && sheetResult.words.length > 0) {
+        setBatchStepMessage(`AI identified ${sheetResult.words.length} words! Generating Thai meanings & pronunciations...`);
+
+        // 3. Batch translate all extracted words
+        const translations: TranslationResponse[] = await batchTranslateWords(sheetResult.words);
+
+        // 4. Populate batch draft list with duplicate check
+        drafts = translations.map((t, idx) => {
+          const isDup = existingSet.has(t.word_en.trim().toLowerCase());
+          return {
+            id: `draft-${idx}-${Date.now()}`,
+            word_en: t.word_en,
+            word_th: t.word_th,
+            reading_th: t.reading_th || getThaiPhonetic(t.word_en),
+            part_of_speech: t.part_of_speech || 'noun',
+            example_sentence_en: t.example_sentence_en || '',
+            example_sentence_th: t.example_sentence_th || '',
+            selected: !isDup,
+            isExpanded: false,
+            isDuplicate: isDup,
+          };
+        });
+      } else {
         setError('No clear English vocabulary words found in this image. Please try another photo or a clearer angle.');
         setIsProcessingBatch(false);
         return;
       }
-
-      setBatchStepMessage(`AI identified ${rawWords.length} words! Generating Thai meanings & pronunciations...`);
-
-      // 3. Batch translate all extracted words
-      const translations: TranslationResponse[] = await batchTranslateWords(rawWords);
-
-      // 4. Populate batch draft list with duplicate check
-      const drafts: VocabEntryDraft[] = translations.map((t, idx) => {
-        const isDup = existingSet.has(t.word_en.trim().toLowerCase());
-        return {
-          id: `draft-${idx}-${Date.now()}`,
-          word_en: t.word_en,
-          word_th: t.word_th,
-          reading_th: t.reading_th || '',
-          part_of_speech: t.part_of_speech,
-          example_sentence_en: t.example_sentence_en,
-          example_sentence_th: t.example_sentence_th,
-          selected: !isDup, // Automatically uncheck duplicate words
-          isExpanded: false,
-          isDuplicate: isDup,
-        };
-      });
 
       setExtractedWords(drafts);
     } catch (err: unknown) {

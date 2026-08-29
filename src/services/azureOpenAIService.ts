@@ -301,10 +301,12 @@ Respond ONLY with valid JSON:
 export interface ExtractedVocabSheet {
   title?: string;
   words: string[];
+  entries?: TranslationResponse[];
 }
 
 /**
  * Extracts vocabulary words & sheet title from an image using Azure OpenAI Vision (gpt-4.1-mini)
+ * Supports 1-shot extraction with Thai meanings and pronunciations
  */
 export const extractVocabListWithAzureVision = async (
   base64Image: string,
@@ -324,19 +326,33 @@ export const extractVocabListWithAzureVision = async (
     imageUrl = `data:${mimeType};base64,${base64Image}`;
   }
 
-  const systemPrompt = `You are an expert AI vision assistant specializing in analyzing educational English worksheets, spelling word lists, textbooks, flashcards, and student study sheets.
+  const systemPrompt = `You are a world-class educational AI vision and linguist assistant specializing in English-Thai vocabulary learning.
 
 Your task:
-1. Identify and extract all TARGET English vocabulary words from the image.
-2. Ignore noise, row numbers, indices (e.g. 1, 2, 3, 4, 11, 12...), page numbers, dates (e.g. "Date: 20/8/26", "Spelling Test Day: 3/9/26"), instructions, and column headers.
-3. Preserve correct sequential reading order (e.g., if there are multiple columns numbered 1 to 10 on the left and 11 to 20 on the right, return them in order 1, 2, 3, ... 20).
-4. Identify any worksheet or list title/topic if visible (e.g., "Spelling Word List (6)", "Science Unit 3", etc.).
-5. Ensure words are clean, lower-cased/standard-cased without leading/trailing numbers or punctuation.
+1. Carefully inspect the image (it could be a worksheet, textbook page, spelling list, flashcard, handwritten notes, bilingual table, or photos of objects/scenes).
+2. Extract all English vocabulary words/phrases found in or represented by the image in correct sequential reading order.
+3. For EVERY extracted word, generate complete educational details:
+   - "word_en": The English word (clean, standard casing, e.g. "quadrilateral", "dinosaur", "reading").
+   - "word_th": Accurate Thai MEANING/TRANSLATION (ความหมายภาษาไทย เช่น "method" -> "วิธีการ / วิธี", "resilience" -> "ความยืดหยุ่น").
+   - "reading_th": Standard Thai PHONETIC PRONUNCIATION (คำอ่านออกเสียง เช่น "method" -> "เมธอด", "resilience" -> "เรซิลิเอนซ์").
+   - "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"].
+   - "example_sentence_en": Simple example sentence.
+   - "example_sentence_th": Thai translation of example sentence.
+4. Detect any worksheet title or topic if visible (e.g. "Spelling Unit 3", "Science Vocabulary").
 
 Respond ONLY with valid JSON matching this schema:
 {
   "title": "Detected Title or empty string",
-  "words": ["word1", "word2", "word3", ...]
+  "words": [
+    {
+      "word_en": "word",
+      "word_th": "ความหมาย",
+      "reading_th": "คำอ่าน",
+      "part_of_speech": "noun",
+      "example_sentence_en": "...",
+      "example_sentence_th": "..."
+    }
+  ]
 }`;
 
   const res = await fetch(url, {
@@ -353,7 +369,7 @@ Respond ONLY with valid JSON matching this schema:
           content: [
             {
               type: 'text',
-              text: 'Please carefully analyze this image, understand its layout (such as tables, cards, or numbered columns), and extract all the vocabulary words and the list title in JSON format.',
+              text: 'Please carefully analyze this image, extract all vocabulary words/items, and provide Thai meanings and phonetic readings in JSON format.',
             },
             {
               type: 'image_url',
@@ -367,6 +383,7 @@ Respond ONLY with valid JSON matching this schema:
       ],
       response_format: { type: 'json_object' },
       temperature: 0.1,
+      max_tokens: 3000,
     }),
   });
 
@@ -382,24 +399,55 @@ Respond ONLY with valid JSON matching this schema:
   }
 
   const parsed = JSON.parse(content);
-  let rawWords: any[] = [];
+  let rawList: any[] = [];
   if (Array.isArray(parsed.words)) {
-    rawWords = parsed.words;
+    rawList = parsed.words;
   } else if (Array.isArray(parsed.items)) {
-    rawWords = parsed.items.map((it: any) => (typeof it === 'string' ? it : it.word_en || it.word));
+    rawList = parsed.items;
   } else if (Array.isArray(parsed.vocabulary)) {
-    rawWords = parsed.vocabulary;
+    rawList = parsed.vocabulary;
+  } else if (Array.isArray(parsed.entries)) {
+    rawList = parsed.entries;
   } else if (Array.isArray(parsed)) {
-    rawWords = parsed;
+    rawList = parsed;
   }
 
-  const words: string[] = rawWords
-    .map((w: any) => String(w).trim())
-    .filter((w) => w.length > 0 && !w.match(/^\d+$/));
+  const entries: TranslationResponse[] = [];
+  const words: string[] = [];
+
+  for (const item of rawList) {
+    if (typeof item === 'string') {
+      const clean = item.trim();
+      if (clean && !clean.match(/^\d+$/)) {
+        words.push(clean);
+      }
+    } else if (item && typeof item === 'object') {
+      const en = String(item.word_en || item.word || item.english || '').trim();
+      if (en && !en.match(/^\d+$/)) {
+        words.push(en);
+        const th = String(item.word_th || item.meaning || item.thai || `คำแปล: ${en}`).trim();
+        const reading = String(item.reading_th || item.pronunciation || getThaiPhonetic(en)).trim();
+        const pos = (item.part_of_speech || 'noun') as PartOfSpeech;
+        const exEn = String(item.example_sentence_en || item.example_en || `Example using ${en}`).trim();
+        const exTh = String(item.example_sentence_th || item.example_th || '').trim();
+        entries.push({
+          word_en: en,
+          word_th: th,
+          reading_th: reading,
+          part_of_speech: pos,
+          example_sentence_en: exEn,
+          example_sentence_th: exTh,
+        });
+      }
+    }
+  }
+
+  console.log(`[Azure OpenAI Vision] Extracted ${words.length} words (${entries.length} with full translations)`);
 
   return {
     title: parsed.title ? String(parsed.title).trim() : undefined,
     words,
+    entries: entries.length > 0 ? entries : undefined,
   };
 };
 
