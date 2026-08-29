@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   X,
   Sparkles,
   Camera,
-  Upload,
+  Image as ImageIcon,
   Volume2,
   Copy,
   Check,
@@ -28,6 +28,7 @@ import {
 } from '../../services/aiService';
 import { speakWord } from '../../services/ttsService';
 import { getThaiPhonetic } from '../../services/phoneticService';
+import { processAndCompressImage } from '../../utils/imageUtils';
 import type { PartOfSpeech, TranslationResponse } from '../../types';
 
 export interface VocabEntryDraft {
@@ -100,6 +101,9 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   const [detectedSheetTitle, setDetectedSheetTitle] = useState<string | null>(null);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [batchStepMessage, setBatchStepMessage] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   // Common UI state
   const [isTranslating, setIsTranslating] = useState(false);
@@ -247,68 +251,68 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   };
 
   // --------------------------------------------------------------------------
-  // Tab 3: Photo / Worksheet Scan
+  // Tab 3: Photo / Worksheet Scan (Camera + Gallery Upload)
   // --------------------------------------------------------------------------
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleProcessFile = async (file: File) => {
     if (!file) return;
 
     setError(null);
     setDetectedSheetTitle(null);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      setImagePreview(base64);
-      setIsProcessingBatch(true);
+    setIsProcessingBatch(true);
+    setBatchStepMessage('Optimizing & compressing image for fast AI processing...');
+
+    try {
+      // 1. Resize and compress image client-side to prevent memory crashes & payload size issues
+      const processed = await processAndCompressImage(file, 1600, 0.85);
+      setImagePreview(processed.base64);
+
       setBatchStepMessage('Scanning worksheet with Multimodal AI Vision...');
 
-      try {
-        // 1. Extract vocabulary words & sheet title using Multimodal Vision AI
-        const sheetResult = await extractVocabSheetFromImage(base64, file.type);
-        const rawWords = sheetResult.words;
+      // 2. Extract vocabulary words & sheet title using Multimodal Vision AI
+      const sheetResult = await extractVocabSheetFromImage(processed.base64, processed.mimeType);
+      const rawWords = sheetResult.words;
 
-        if (sheetResult.title) {
-          setDetectedSheetTitle(sheetResult.title);
-        }
-
-        if (!rawWords || rawWords.length === 0) {
-          setError('No clear English vocabulary words found in this image. Please try another photo.');
-          setIsProcessingBatch(false);
-          return;
-        }
-
-        setBatchStepMessage(`AI identified ${rawWords.length} words! Generating Thai meanings & pronunciations...`);
-
-        // 2. Batch translate all extracted words
-        const translations: TranslationResponse[] = await batchTranslateWords(rawWords);
-
-        // 3. Populate batch draft list with duplicate check
-        const drafts: VocabEntryDraft[] = translations.map((t, idx) => {
-          const isDup = existingSet.has(t.word_en.trim().toLowerCase());
-          return {
-            id: `draft-${idx}-${Date.now()}`,
-            word_en: t.word_en,
-            word_th: t.word_th,
-            reading_th: t.reading_th || '',
-            part_of_speech: t.part_of_speech,
-            example_sentence_en: t.example_sentence_en,
-            example_sentence_th: t.example_sentence_th,
-            selected: !isDup, // Automatically uncheck duplicate words
-            isExpanded: false,
-            isDuplicate: isDup,
-          };
-        });
-
-        setExtractedWords(drafts);
-      } catch (err: unknown) {
-        const errObj = err as Error;
-        setError(errObj.message || 'Failed to extract words from photo.');
-      } finally {
-        setIsProcessingBatch(false);
-        setBatchStepMessage(null);
+      if (sheetResult.title) {
+        setDetectedSheetTitle(sheetResult.title);
       }
-    };
-    reader.readAsDataURL(file);
+
+      if (!rawWords || rawWords.length === 0) {
+        setError('No clear English vocabulary words found in this image. Please try another photo or a clearer angle.');
+        setIsProcessingBatch(false);
+        return;
+      }
+
+      setBatchStepMessage(`AI identified ${rawWords.length} words! Generating Thai meanings & pronunciations...`);
+
+      // 3. Batch translate all extracted words
+      const translations: TranslationResponse[] = await batchTranslateWords(rawWords);
+
+      // 4. Populate batch draft list with duplicate check
+      const drafts: VocabEntryDraft[] = translations.map((t, idx) => {
+        const isDup = existingSet.has(t.word_en.trim().toLowerCase());
+        return {
+          id: `draft-${idx}-${Date.now()}`,
+          word_en: t.word_en,
+          word_th: t.word_th,
+          reading_th: t.reading_th || '',
+          part_of_speech: t.part_of_speech,
+          example_sentence_en: t.example_sentence_en,
+          example_sentence_th: t.example_sentence_th,
+          selected: !isDup, // Automatically uncheck duplicate words
+          isExpanded: false,
+          isDuplicate: isDup,
+        };
+      });
+
+      setExtractedWords(drafts);
+    } catch (err: unknown) {
+      const errObj = err as Error;
+      console.error('Image scan error:', errObj);
+      setError(errObj.message || 'Failed to extract words from photo. Please try again.');
+    } finally {
+      setIsProcessingBatch(false);
+      setBatchStepMessage(null);
+    }
   };
 
   const handleToggleSelectWord = (id: string) => {
@@ -1029,44 +1033,118 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
           {/* ================================================================= */}
           {activeTab === 'photo' && (
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {/* Hidden File Inputs */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleProcessFile(file);
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleProcessFile(file);
+                  e.target.value = '';
+                }}
+              />
+
               {extractedWords.length === 0 ? (
                 <div className="space-y-4">
-                  <label className="flex flex-col items-center justify-center w-full h-52 border-2 border-dashed border-primary/30 rounded-card hover:border-primary cursor-pointer bg-primary-light/10 transition-colors p-4">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                    />
-                    {imagePreview ? (
-                      <div className="relative w-full h-full flex items-center justify-center">
-                        <img src={imagePreview} alt="Preview" className="max-h-44 rounded-lg object-contain" />
-                        {isProcessingBatch && (
-                          <div className="absolute inset-0 bg-white/90 rounded-lg flex flex-col items-center justify-center gap-2 p-4 text-center">
-                            <Sparkles className="w-6 h-6 text-primary animate-spin" />
-                            <span className="text-sm font-semibold text-primary">
-                              {batchStepMessage || 'Processing image with Multimodal AI Vision...'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center space-y-2">
-                        <div className="w-12 h-12 rounded-full bg-primary-light text-primary flex items-center justify-center mx-auto">
-                          <Upload className="w-6 h-6" />
+                  {isProcessingBatch && imagePreview ? (
+                    /* Processing State with Preview Overlay */
+                    <div className="relative w-full h-60 rounded-2xl overflow-hidden border-2 border-primary/40 bg-slate-900/10 flex items-center justify-center p-3 shadow-inner">
+                      <img
+                        src={imagePreview}
+                        alt="Worksheet Preview"
+                        className="max-h-56 max-w-full rounded-xl object-contain opacity-60 filter blur-[1px]"
+                      />
+                      <div className="absolute inset-0 bg-white/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 p-6 text-center animate-fade-in">
+                        <div className="w-14 h-14 rounded-2xl bg-primary-light flex items-center justify-center text-primary shadow-sm animate-pulse">
+                          <Sparkles className="w-7 h-7 animate-spin" />
                         </div>
+                        <div className="space-y-1">
+                          <p className="text-sm sm:text-base font-outfit font-bold text-text-primary">
+                            AI Vision Processing
+                          </p>
+                          <p className="text-xs sm:text-sm font-medium text-primary max-w-sm mx-auto">
+                            {batchStepMessage || 'Scanning image and identifying vocabulary...'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Dual Action Upload & Camera Dropzone */
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragOver(true);
+                      }}
+                      onDragLeave={() => setIsDragOver(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragOver(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handleProcessFile(file);
+                      }}
+                      className={`w-full rounded-2xl border-2 border-dashed transition-all p-5 sm:p-7 text-center ${
+                        isDragOver
+                          ? 'border-primary bg-primary-light/30 scale-[1.01]'
+                          : 'border-primary/30 bg-primary-light/10 hover:border-primary/60'
+                      }`}
+                    >
+                      <div className="max-w-md mx-auto space-y-4">
+                        <div className="w-14 h-14 rounded-2xl bg-white text-primary flex items-center justify-center mx-auto shadow-sm">
+                          <Camera className="w-7 h-7 text-primary" />
+                        </div>
+
                         <div>
-                          <p className="text-sm font-bold text-text-primary">
-                            Take a photo or upload textbook page
-                          </p>
-                          <p className="text-xs text-text-secondary mt-0.5 max-w-xs mx-auto">
-                            Automatically extracts multiple words with <span className="font-semibold text-primary">คำอ่านภาษาไทย</span>!
+                          <h3 className="text-base sm:text-lg font-outfit font-bold text-text-primary">
+                            Photo & Worksheet Scanner
+                          </h3>
+                          <p className="text-xs text-text-secondary mt-1">
+                            Automatically extract multiple English words from textbook pages, worksheets, or flashcards with Thai meanings & pronunciations.
                           </p>
                         </div>
+
+                        {/* Dual Action Buttons */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                          {/* 1. Take Photo (Camera) */}
+                          <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer"
+                          >
+                            <Camera className="w-4 h-4 flex-shrink-0" />
+                            <span>ถ่ายภาพทันที</span>
+                          </button>
+
+                          {/* 2. Upload Image (Gallery / Files) */}
+                          <button
+                            type="button"
+                            onClick={() => galleryInputRef.current?.click()}
+                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <ImageIcon className="w-4 h-4 flex-shrink-0" />
+                            <span>เลือกรูปจากเครื่อง</span>
+                          </button>
+                        </div>
+
+                        <p className="text-[11px] text-text-muted pt-1">
+                          รองรับการถ่ายรูป, เลือกรูปจากคลังภาพ, แคปหน้าจอ หรือลากไฟล์มาวาง (JPG, PNG, WebP)
+                        </p>
                       </div>
-                    )}
-                  </label>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Multi-Word Review List */
