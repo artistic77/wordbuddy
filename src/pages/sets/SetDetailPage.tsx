@@ -56,6 +56,7 @@ export const SetDetailPage: React.FC = () => {
   // Bulk selection & deletion state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isDeletingSet, setIsDeletingSet] = useState(false);
 
   // Inline title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -217,6 +218,23 @@ export const SetDetailPage: React.FC = () => {
       setIsEditingTitle(false);
     } catch (err) {
       console.error('Error updating set title:', err);
+    }
+  };
+
+  const handleDeleteSet = async () => {
+    if (!set || user?.id !== set.owner_id) return;
+    const confirmMsg = `Are you sure you want to delete "${set.title}" and all ${entries.length} vocabulary words? This action cannot be undone.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsDeletingSet(true);
+    try {
+      const { error } = await supabase.from('vocab_sets').delete().eq('id', set.id);
+      if (error) throw error;
+      navigate('/sets');
+    } catch (err) {
+      console.error('Failed to delete vocab set:', err);
+      alert('Failed to delete vocabulary set.');
+      setIsDeletingSet(false);
     }
   };
 
@@ -591,6 +609,21 @@ export const SetDetailPage: React.FC = () => {
               <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-1" />
                 Add Words (AI / Photo / Type)
+              </Button>
+            )}
+
+            {/* Delete Set Button for owners */}
+            {isOwner && (
+              <Button
+                variant="danger"
+                size="md"
+                onClick={handleDeleteSet}
+                disabled={isDeletingSet}
+                className="bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/30 transition-colors"
+                title="Delete this vocabulary set"
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                {isDeletingSet ? 'Deleting...' : 'Delete Set'}
               </Button>
             )}
           </div>
