@@ -21,6 +21,7 @@ import { PetShopPage } from './pages/pet/PetShopPage';
 import { BossBattlePage } from './pages/battle/BossBattlePage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminUserDetailPage } from './pages/admin/AdminUserDetailPage';
+import { UserGuidePage } from './pages/guide/UserGuidePage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AdminRoute } from './components/auth/AdminRoute';
 import { Button } from './components/ui/Button';
@@ -184,7 +185,7 @@ const HomePage: React.FC = () => {
       )}
 
       {/* Main Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="space-y-3">
           <h3 className="text-lg font-outfit font-bold text-text-primary">📚 My Vocabulary Decks</h3>
           <p className="text-sm text-text-secondary">
@@ -204,6 +205,21 @@ const HomePage: React.FC = () => {
             <Button variant="secondary" size="sm">Explore Public Sets →</Button>
           </Link>
         </Card>
+
+        <Card className="space-y-3 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30 border-amber-200/70">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📖</span>
+            <h3 className="text-lg font-outfit font-bold text-text-primary">คู่มือการใช้งาน (Guide)</h3>
+          </div>
+          <p className="text-sm text-text-secondary">
+            วิธีสร้างชุดคำศัพท์, เล่น 5 โหมดฝึกฝน, เลี้ยงดูสัตว์เลี้ยง, มินิเกมกีฬา และสู้บอสแบบสรุปกระชับ
+          </p>
+          <Link to="/guide" className="inline-block pt-2">
+            <Button variant="secondary" size="sm" className="border-amber-300 text-amber-900 hover:bg-amber-100">
+              อ่านคู่มือการใช้งาน →
+            </Button>
+          </Link>
+        </Card>
       </div>
     </div>
   );
@@ -220,6 +236,7 @@ export const App: React.FC = () => {
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<HomePage />} />
+                <Route path="/guide" element={<UserGuidePage />} />
                 <Route path="/auth/login" element={<LoginPage />} />
                 <Route path="/auth/register" element={<RegisterPage />} />
                 <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, ShieldCheck, Target } from 'lucide-react';
+import { User, ShieldCheck, Target, BookOpen } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Badge } from '../ui/Badge';
 import { DailyMissionsModal } from '../gamification/DailyMissionsModal';
+import { UserGuideModal } from '../guide/UserGuideModal';
 import { gamificationService } from '../../services/gamificationService';
 
 export const Navbar: React.FC = () => {
@@ -11,6 +12,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const [coins, setCoins] = useState<number>(gamificationService.getCoins());
   const [isMissionsOpen, setIsMissionsOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
     const handleCoins = () => setCoins(gamificationService.getCoins());
@@ -75,6 +77,17 @@ export const Navbar: React.FC = () => {
 
         {/* User / Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* User Guide Button (Always visible) */}
+          <button
+            type="button"
+            onClick={() => setIsGuideOpen(true)}
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold text-xs border border-amber-200/80 shadow-sm transition-all active:scale-95"
+            title="เปิดคู่มือการใช้งาน (User Guide)"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-600" />
+            <span className="hidden sm:inline">คู่มือ</span>
+          </button>
+
           {user ? (
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Daily Missions Trigger Button */}
@@ -138,6 +151,12 @@ export const Navbar: React.FC = () => {
       <DailyMissionsModal
         isOpen={isMissionsOpen}
         onClose={() => setIsMissionsOpen(false)}
+      />
+
+      {/* User Guide Modal */}
+      <UserGuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
       />
     </header>
   );
