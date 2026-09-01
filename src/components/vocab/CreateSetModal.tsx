@@ -44,8 +44,8 @@ export const CreateSetModal: React.FC<CreateSetModalProps> = ({ isOpen, onClose,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-text-primary/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-lg my-auto max-h-[92vh]">
-        <Card className="p-6 sm:p-8 shadow-modal border-primary/20 relative max-h-[92vh] overflow-y-auto">
+      <div className="w-full max-w-lg my-auto max-h-[calc(100dvh-2.5rem)]">
+        <Card className="p-6 sm:p-8 shadow-modal border-primary/20 relative max-h-[calc(100dvh-2.5rem)] overflow-y-auto">
           <button
             onClick={onClose}
             className="absolute top-5 right-5 p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"

@@ -635,7 +635,7 @@ export const SetDetailPage: React.FC = () => {
             <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">
               Choose Study Mode (5 Interactive Games)
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
               {/* 1. Flashcards */}
               <Link to={`/sets/${set.id}/study/flashcard`} className="block">
                 <Button
@@ -697,7 +697,7 @@ export const SetDetailPage: React.FC = () => {
               </Link>
 
               {/* 5. Fill in the Blank */}
-              <Link to={`/sets/${set.id}/study/fill_blank`} className="block">
+              <Link to={`/sets/${set.id}/study/fill_blank`} className="block sm:col-span-2 md:col-span-1">
                 <Button
                   variant="secondary"
                   size="md"

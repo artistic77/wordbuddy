@@ -155,9 +155,9 @@ export const MultipleChoiceGamePage: React.FC = () => {
         secondsElapsed={secondsElapsed}
       />
 
-      <div className="w-full max-w-lg space-y-6">
+      <div className="w-full max-w-xl space-y-6">
         {/* Question Card */}
-        <Card className="p-8 shadow-card border-primary/20 text-center space-y-3">
+        <Card className="p-6 sm:p-8 shadow-card border-primary/20 text-center space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
             What is the Thai meaning of:
           </p>
@@ -168,7 +168,7 @@ export const MultipleChoiceGamePage: React.FC = () => {
             <button
               type="button"
               onClick={() => speakWord(currentQuestion.word_en)}
-              className="p-2 rounded-full text-primary hover:bg-primary-light transition-colors"
+              className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-primary hover:bg-primary-light transition-colors"
               title="Pronounce word"
             >
               <Volume2 className="w-5 h-5" />
@@ -179,8 +179,8 @@ export const MultipleChoiceGamePage: React.FC = () => {
           </span>
         </Card>
 
-        {/* 4 Stacked Option Buttons */}
-        <div className="space-y-3">
+        {/* 4 Option Buttons (2-col grid on tablets) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
           {options.map((opt, i) => {
             let buttonStyle = 'bg-white border-border text-text-primary hover:border-primary/50 hover:bg-surface';
 
@@ -200,11 +200,11 @@ export const MultipleChoiceGamePage: React.FC = () => {
                 type="button"
                 onClick={() => handleSelectOption(opt)}
                 disabled={selectedOption !== null}
-                className={`w-full min-h-[56px] px-5 py-3 rounded-card border-2 font-sarabun text-lg font-semibold flex items-center justify-between transition-all active:scale-[0.99] ${buttonStyle}`}
+                className={`w-full min-h-[58px] px-4 py-3 rounded-card border-2 font-sarabun text-base sm:text-lg font-semibold flex items-center justify-between transition-all active:scale-[0.99] ${buttonStyle}`}
               >
-                <span>{opt.text}</span>
+                <span className="text-left break-words">{opt.text}</span>
                 {selectedOption !== null && (
-                  <div>
+                  <div className="flex-shrink-0 ml-2">
                     {opt.isCorrect && <Check className="w-5 h-5" />}
                     {selectedOption.text === opt.text && !opt.isCorrect && <X className="w-5 h-5" />}
                   </div>
@@ -222,7 +222,7 @@ export const MultipleChoiceGamePage: React.FC = () => {
               variant="primary"
               size="lg"
               onClick={handleNext}
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 h-14"
             >
               {currentIndex + 1 < questions.length ? 'Next Question' : 'View Results'}
               <ArrowRight className="w-4 h-4" />

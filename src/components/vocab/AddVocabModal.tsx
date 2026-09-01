@@ -487,8 +487,8 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-text-primary/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-2xl my-auto max-h-[94vh] flex flex-col">
-        <Card className="p-4 sm:p-6 shadow-modal border-primary/20 relative flex flex-col flex-1 max-h-[94vh] overflow-hidden bg-white">
+      <div className="w-full max-w-2xl my-auto max-h-[calc(100dvh-2.5rem)] flex flex-col">
+        <Card className="p-4 sm:p-6 shadow-modal border-primary/20 relative flex flex-col flex-1 max-h-[calc(100dvh-2.5rem)] overflow-hidden bg-white">
           {/* Close button */}
           <button
             onClick={onClose}

@@ -126,7 +126,7 @@ export const SpellingGamePage: React.FC = () => {
     : getThaiPhonetic(currentWord.word_en);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-surface via-primary-light/20 to-surface">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-start sm:justify-center p-4 sm:p-6 pt-4 sm:pt-8 overflow-y-auto bg-gradient-to-b from-surface via-primary-light/20 to-surface">
       <GameHeader
         setId={set.id}
         setTitle={set.title}
@@ -136,8 +136,8 @@ export const SpellingGamePage: React.FC = () => {
         secondsElapsed={secondsElapsed}
       />
 
-      <div className="w-full max-w-lg">
-        <Card className="p-8 sm:p-10 shadow-modal border-primary/20 text-center space-y-6">
+      <div className="w-full max-w-xl">
+        <Card className="p-6 sm:p-10 shadow-modal border-primary/20 text-center space-y-5 sm:space-y-6">
           <div className="space-y-1">
             <h2 className="text-2xl font-outfit font-bold text-text-primary">
               Listen & Spell 🎧
@@ -147,21 +147,21 @@ export const SpellingGamePage: React.FC = () => {
             </p>
           </div>
 
-          {/* Large Speaker Play Button */}
-          <div className="py-2 flex flex-col items-center gap-3">
+          {/* Speaker Play Button (responsive for iPad keyboard) */}
+          <div className="py-1 sm:py-2 flex flex-col items-center gap-2.5">
             <button
               type="button"
               onClick={() => speakWord(currentWord.word_en)}
-              className="w-24 h-24 rounded-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center shadow-primary-btn hover:scale-105 active:scale-95 transition-all"
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center shadow-primary-btn hover:scale-105 active:scale-95 transition-all"
               title="Play audio"
             >
-              <Volume2 className="w-10 h-10" />
+              <Volume2 className="w-8 h-8 sm:w-10 sm:h-10" />
             </button>
 
             <button
               type="button"
               onClick={() => speakWord(currentWord.word_en)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline p-1 min-h-[32px]"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Replay Audio
@@ -201,7 +201,9 @@ export const SpellingGamePage: React.FC = () => {
               autoFocus
               autoComplete="off"
               autoCorrect="off"
-              spellCheck="false"
+              autoCapitalize="none"
+              spellCheck={false}
+              enterKeyHint="send"
             />
 
             {/* Feedback states */}
@@ -227,7 +229,7 @@ export const SpellingGamePage: React.FC = () => {
             )}
 
             {answerStatus === null ? (
-              <Button type="submit" variant="primary" size="lg" className="w-full">
+              <Button type="submit" variant="primary" size="lg" className="w-full h-14 text-base">
                 Submit Answer
               </Button>
             ) : (
@@ -236,7 +238,7 @@ export const SpellingGamePage: React.FC = () => {
                 variant="primary"
                 size="lg"
                 onClick={handleNext}
-                className="w-full flex items-center justify-center gap-2"
+                className="w-full flex items-center justify-center gap-2 h-14 text-base"
               >
                 {currentIndex + 1 < words.length ? 'Next Word' : 'See Results'}
                 <ArrowRight className="w-4 h-4" />

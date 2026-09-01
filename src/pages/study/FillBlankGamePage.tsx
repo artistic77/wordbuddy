@@ -232,9 +232,9 @@ export const FillBlankGamePage: React.FC = () => {
       </div>
 
       {!isCompleted ? (
-        <Card className="p-6 sm:p-10 space-y-8 shadow-card border-primary/20">
+        <Card className="p-5 sm:p-8 space-y-6 shadow-card border-primary/20">
           {/* Question Sentence Box */}
-          <div className="space-y-4 text-center">
+          <div className="space-y-3.5 text-center">
             <div className="flex items-center justify-center gap-2">
               <Badge pos={currentEntry.part_of_speech} size="md">
                 Hint POS: {currentEntry.part_of_speech}
@@ -245,7 +245,7 @@ export const FillBlankGamePage: React.FC = () => {
             </div>
 
             {/* Masked English Sentence */}
-            <div className="p-6 bg-surface-elevated/70 rounded-2xl border border-border space-y-3">
+            <div className="p-4 sm:p-5 bg-surface-elevated/70 rounded-2xl border border-border space-y-2.5">
               <p className="text-xl sm:text-2xl font-outfit font-semibold text-text-primary leading-relaxed">
                 "{getMaskedSentence(currentEntry)}"
               </p>
@@ -266,7 +266,7 @@ export const FillBlankGamePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowHint(true)}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors"
+                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors p-1"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span>Show Thai meaning hint ({currentEntry.word_th})</span>
@@ -291,6 +291,11 @@ export const FillBlankGamePage: React.FC = () => {
                   disabled={isAnswered}
                   placeholder="Type the missing English word..."
                   autoFocus
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  enterKeyHint="send"
                   className={`w-full px-5 py-3.5 rounded-2xl border-2 font-outfit text-lg text-center tracking-wide focus:outline-none transition-all shadow-sm ${
                     isAnswered
                       ? isCorrect

@@ -132,9 +132,9 @@ export const StudyResultsPage: React.FC = () => {
               <p className="text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Words to review ({state.missedWords.length}):
               </p>
-              <div className="max-h-36 overflow-y-auto space-y-1.5 p-2 bg-surface rounded-xl border border-border">
+              <div className="max-h-36 sm:max-h-60 overflow-y-auto space-y-1.5 p-2 sm:p-2.5 bg-surface rounded-xl border border-border">
                 {state.missedWords.map((word) => (
-                  <div key={word.id} className="flex items-center justify-between text-xs px-2 py-1">
+                  <div key={word.id} className="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg hover:bg-surface-elevated">
                     <span className="font-semibold text-primary">{word.word_en}</span>
                     <span className="font-sarabun text-text-secondary">{word.word_th}</span>
                   </div>

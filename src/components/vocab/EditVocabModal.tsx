@@ -123,7 +123,7 @@ export const EditVocabModal: React.FC<EditVocabModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <Card className="w-full max-w-xl p-6 sm:p-8 space-y-6 max-h-[92vh] overflow-y-auto relative shadow-2xl">
+      <Card className="w-full max-w-xl p-6 sm:p-8 space-y-6 max-h-[calc(100dvh-2.5rem)] overflow-y-auto relative shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-border">
           <div>

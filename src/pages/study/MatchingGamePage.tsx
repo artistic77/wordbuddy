@@ -356,10 +356,10 @@ export const MatchingGamePage: React.FC = () => {
 
                   {/* Tile Text */}
                   <span
-                    className={`font-bold ${
+                    className={`font-bold break-words hyphens-auto px-1 ${
                       tile.type === 'en'
-                        ? 'font-outfit text-base sm:text-lg text-primary'
-                        : 'font-sarabun text-sm sm:text-base text-text-primary'
+                        ? 'font-outfit text-sm sm:text-base md:text-lg text-primary'
+                        : 'font-sarabun text-xs sm:text-sm md:text-base text-text-primary'
                     }`}
                   >
                     {tile.text}

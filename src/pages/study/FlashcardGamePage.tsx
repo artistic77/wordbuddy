@@ -126,14 +126,14 @@ export const FlashcardGamePage: React.FC = () => {
         secondsElapsed={secondsElapsed}
       />
 
-      <div className="w-full max-w-md h-80 sm:h-96 perspective-1000 cursor-pointer" onClick={handleFlip}>
+      <div className="w-full max-w-xl h-80 sm:h-[420px] min-h-[360px] perspective-1000 cursor-pointer" onClick={handleFlip}>
         <div
           className={`relative w-full h-full duration-500 transform-style-3d transition-transform shadow-card hover:shadow-card-hover rounded-card ${
             isFlipped ? 'rotate-y-180' : ''
           }`}
         >
           {/* Card Front (English + Pronunciation Hint) */}
-          <div className="absolute inset-0 w-full h-full bg-white rounded-card border-2 border-primary/20 p-8 flex flex-col items-center justify-between backface-hidden">
+          <div className="absolute inset-0 w-full h-full bg-white rounded-card border-2 border-primary/20 p-6 sm:p-8 flex flex-col items-center justify-between backface-hidden">
             <div className="w-full flex items-center justify-between text-xs text-text-secondary font-medium">
               <span className="bg-primary-light text-primary px-2.5 py-1 rounded-full font-semibold">
                 {currentCard.part_of_speech}
@@ -144,7 +144,7 @@ export const FlashcardGamePage: React.FC = () => {
                   e.stopPropagation();
                   speakWord(currentCard.word_en);
                 }}
-                className="p-2 rounded-full text-primary hover:bg-primary-light transition-colors"
+                className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-primary hover:bg-primary-light transition-colors"
                 title="Pronounce English word"
               >
                 <Volume2 className="w-5 h-5" />
@@ -168,7 +168,7 @@ export const FlashcardGamePage: React.FC = () => {
           </div>
 
           {/* Card Back (Thai Meaning & Examples) */}
-          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary-light/50 to-white rounded-card border-2 border-primary p-8 flex flex-col items-center justify-between rotate-y-180 backface-hidden">
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary-light/50 to-white rounded-card border-2 border-primary p-6 sm:p-8 flex flex-col items-center justify-between rotate-y-180 backface-hidden">
             <div className="w-full flex items-center justify-between text-xs text-text-secondary">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-primary">{currentCard.word_en}</span>
@@ -180,7 +180,7 @@ export const FlashcardGamePage: React.FC = () => {
                   e.stopPropagation();
                   speakWord(currentCard.word_en);
                 }}
-                className="p-2 rounded-full text-primary hover:bg-primary-light transition-colors"
+                className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-primary hover:bg-primary-light transition-colors"
               >
                 <Volume2 className="w-5 h-5" />
               </button>
@@ -191,7 +191,7 @@ export const FlashcardGamePage: React.FC = () => {
                 {currentCard.word_th}
               </h2>
               {currentCard.example_sentence_en && (
-                <div className="p-3 rounded-xl bg-white/80 border border-primary/10 text-xs text-text-secondary text-left space-y-1">
+                <div className="p-3.5 rounded-xl bg-white/90 border border-primary/10 text-xs sm:text-sm text-text-secondary text-left space-y-1">
                   <p className="italic">"{currentCard.example_sentence_en}"</p>
                   {currentCard.example_sentence_th && (
                     <p className="font-sarabun text-text-muted">{currentCard.example_sentence_th}</p>
@@ -206,7 +206,7 @@ export const FlashcardGamePage: React.FC = () => {
       </div>
 
       {/* Self-Rating Action Buttons */}
-      <div className="w-full max-w-md mt-6">
+      <div className="w-full max-w-xl mt-6">
         {isFlipped ? (
           <div className="grid grid-cols-3 gap-3 animate-fade-in">
             <button
