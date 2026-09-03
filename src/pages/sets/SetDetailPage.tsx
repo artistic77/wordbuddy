@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -23,6 +23,8 @@ import {
   Star,
   Copy,
   User as UserIcon,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -57,6 +59,11 @@ export const SetDetailPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isDeletingSet, setIsDeletingSet] = useState(false);
+
+  // Mastery filter & study scope states
+  const [filterStatus, setFilterStatus] = useState<'all' | 'unmastered' | 'mastered'>('all');
+  const [studyScope, setStudyScope] = useState<'unmastered' | 'all'>('unmastered');
+  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
 
   // Inline title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -419,6 +426,71 @@ export const SetDetailPage: React.FC = () => {
     }
   };
 
+  // Toggle single word mastery status
+  const handleToggleMastered = async (entryId: string, currentStatus: boolean) => {
+    if (!isOwner) {
+      alert('คุณสามารถคัดลอกชุดคำศัพท์นี้ไปยัง "ชุดคำศัพท์ของฉัน" เพื่อบันทึกสถานะการเรียนรู้ส่วนตัวได้ครับ');
+      return;
+    }
+    const newStatus = !currentStatus;
+    // Optimistic UI update
+    setEntries((prev) =>
+      prev.map((e) => (e.id === entryId ? { ...e, is_mastered: newStatus } : e))
+    );
+
+    try {
+      const { error } = await supabase
+        .from('vocab_entries')
+        .update({ is_mastered: newStatus })
+        .eq('id', entryId);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Failed to update word status:', err);
+      // Rollback on error
+      setEntries((prev) =>
+        prev.map((e) => (e.id === entryId ? { ...e, is_mastered: currentStatus } : e))
+      );
+    }
+  };
+
+  // Batch toggle mastery status for selected words
+  const handleBatchSetMastered = async (status: boolean) => {
+    if (selectedIds.size === 0 || !isOwner) return;
+    setIsBatchUpdating(true);
+    const ids = Array.from(selectedIds);
+
+    // Optimistic UI update
+    setEntries((prev) =>
+      prev.map((e) => (selectedIds.has(e.id) ? { ...e, is_mastered: status } : e))
+    );
+    setSelectedIds(new Set());
+
+    try {
+      const { error } = await supabase
+        .from('vocab_entries')
+        .update({ is_mastered: status })
+        .in('id', ids);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Failed to batch update word status:', err);
+      fetchSetData();
+    } finally {
+      setIsBatchUpdating(false);
+    }
+  };
+
+  const masteredCount = useMemo(() => entries.filter((e) => e.is_mastered).length, [entries]);
+  const unmasteredCount = useMemo(() => entries.length - masteredCount, [entries, masteredCount]);
+  const masteryPercentage = entries.length > 0 ? Math.round((masteredCount / entries.length) * 100) : 0;
+
+  const filteredEntries = useMemo(() => {
+    if (filterStatus === 'mastered') return entries.filter((e) => e.is_mastered);
+    if (filterStatus === 'unmastered') return entries.filter((e) => !e.is_mastered);
+    return entries;
+  }, [entries, filterStatus]);
+
   if (isLoading || !set) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center space-y-3">
@@ -629,15 +701,142 @@ export const SetDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Mastery Stats & Progress Banner */}
+        {entries.length > 0 && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-50/70 via-white to-amber-50/70 border border-border/80 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-accent-gold" />
+                <span className="text-sm font-bold font-outfit text-text-primary">
+                  Vocab Mastery Progress (ความก้าวหน้าการเรียนรู้)
+                </span>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 self-start sm:self-auto border border-emerald-200">
+                จำได้แล้ว {masteryPercentage}% ({masteredCount}/{entries.length} คำ)
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full h-2.5 bg-gray-200/80 rounded-full overflow-hidden flex">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                style={{ width: `${masteryPercentage}%` }}
+              />
+            </div>
+
+            {/* Stat Badges */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-1">
+              <div
+                onClick={() => setFilterStatus('mastered')}
+                className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-2 ${
+                  filterStatus === 'mastered'
+                    ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-200'
+                    : 'bg-white/90 border-emerald-200/80 hover:border-emerald-300'
+                }`}
+                title="คลิกเพื่อกรองเฉพาะคำที่จำได้แล้ว"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium">จำได้แล้ว</p>
+                  <p className="text-base sm:text-lg font-bold font-outfit text-emerald-700">
+                    {masteredCount} <span className="text-xs font-normal">คำ</span>
+                  </p>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setFilterStatus('unmastered')}
+                className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-2 ${
+                  filterStatus === 'unmastered'
+                    ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-200'
+                    : 'bg-white/90 border-amber-200/80 hover:border-amber-300'
+                }`}
+                title="คลิกเพื่อกรองเฉพาะคำที่ยังจำไม่ได้"
+              >
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium">ยังจำไม่ได้</p>
+                  <p className="text-base sm:text-lg font-bold font-outfit text-amber-700">
+                    {unmasteredCount} <span className="text-xs font-normal">คำ</span>
+                  </p>
+                </div>
+              </div>
+
+              <div
+                onClick={() => setFilterStatus('all')}
+                className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-2 ${
+                  filterStatus === 'all'
+                    ? 'bg-primary-light/40 border-primary ring-2 ring-primary/20'
+                    : 'bg-white/90 border-border hover:border-primary/40'
+                }`}
+                title="คลิกเพื่อดูคำศัพท์ทั้งหมด"
+              >
+                <div className="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium">ทั้งหมด</p>
+                  <p className="text-base sm:text-lg font-bold font-outfit text-primary">
+                    {entries.length} <span className="text-xs font-normal">คำ</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Study Modes Bar */}
         {entries.length > 0 && (
-          <div className="pt-5 border-t border-border">
-            <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-text-secondary mb-3">
-              Choose Study Mode (5 Interactive Games)
-            </h3>
+          <div className="pt-5 border-t border-border space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-text-secondary">
+                Choose Study Mode (5 Interactive Games)
+              </h3>
+
+              {/* Study Scope Toggle: ฝึกเฉพาะคำที่ยังจำไม่ได้ vs ฝึกทุกคำ */}
+              <div className="inline-flex p-1 bg-surface-muted rounded-xl border border-border/80 text-xs font-semibold self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setStudyScope('unmastered')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    studyScope === 'unmastered'
+                      ? 'bg-white text-amber-800 shadow-xs font-bold border border-amber-200'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  <span>ฝึกเฉพาะคำที่ยังจำไม่ได้ ({unmasteredCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudyScope('all')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                    studyScope === 'all'
+                      ? 'bg-white text-primary shadow-xs font-bold border border-primary/20'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-primary" />
+                  <span>ฝึกทั้งหมด ({entries.length})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Hint if all words are mastered and scope is unmastered */}
+            {studyScope === 'unmastered' && unmasteredCount === 0 && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>ยอดเยี่ยมมาก! คุณจำคำศัพท์ในชุดนี้ได้ครบทุกคำแล้ว โหมดฝึกจะทบทวนคำศัพท์ทั้งหมดให้ครับ</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
               {/* 1. Flashcards */}
-              <Link to={`/sets/${set.id}/study/flashcard`} className="block">
+              <Link to={`/sets/${set.id}/study/flashcard?scope=${studyScope}`} className="block">
                 <Button
                   variant="primary"
                   size="md"
@@ -652,7 +851,7 @@ export const SetDetailPage: React.FC = () => {
               </Link>
 
               {/* 2. Spelling Game */}
-              <Link to={`/sets/${set.id}/study/spelling`} className="block">
+              <Link to={`/sets/${set.id}/study/spelling?scope=${studyScope}`} className="block">
                 <Button
                   variant="secondary"
                   size="md"
@@ -667,7 +866,7 @@ export const SetDetailPage: React.FC = () => {
               </Link>
 
               {/* 3. Multiple Choice */}
-              <Link to={`/sets/${set.id}/study/multiple_choice`} className="block">
+              <Link to={`/sets/${set.id}/study/multiple_choice?scope=${studyScope}`} className="block">
                 <Button
                   variant="secondary"
                   size="md"
@@ -682,7 +881,7 @@ export const SetDetailPage: React.FC = () => {
               </Link>
 
               {/* 4. Word Matching */}
-              <Link to={`/sets/${set.id}/study/matching`} className="block">
+              <Link to={`/sets/${set.id}/study/matching?scope=${studyScope}`} className="block">
                 <Button
                   variant="secondary"
                   size="md"
@@ -697,7 +896,7 @@ export const SetDetailPage: React.FC = () => {
               </Link>
 
               {/* 5. Fill in the Blank */}
-              <Link to={`/sets/${set.id}/study/fill_blank`} className="block sm:col-span-2 md:col-span-1">
+              <Link to={`/sets/${set.id}/study/fill_blank?scope=${studyScope}`} className="block sm:col-span-2 md:col-span-1">
                 <Button
                   variant="secondary"
                   size="md"
@@ -717,11 +916,51 @@ export const SetDetailPage: React.FC = () => {
 
       {/* Vocab Entries List Section */}
       <div className="space-y-3 sm:space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <h2 className="text-lg sm:text-xl font-outfit font-bold text-text-primary">
-              Vocabulary List ({entries.length})
+              Vocabulary List ({filteredEntries.length})
             </h2>
+
+            {/* Filter segmented buttons */}
+            <div className="inline-flex p-1 bg-surface-muted rounded-xl border border-border/80 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setFilterStatus('all')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  filterStatus === 'all'
+                    ? 'bg-white text-primary shadow-xs font-bold border border-primary/20'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                ทั้งหมด ({entries.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterStatus('unmastered')}
+                className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                  filterStatus === 'unmastered'
+                    ? 'bg-white text-amber-700 shadow-xs font-bold border border-amber-200'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                ยังจำไม่ได้ ({unmasteredCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterStatus('mastered')}
+                className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                  filterStatus === 'mastered'
+                    ? 'bg-white text-emerald-700 shadow-xs font-bold border border-emerald-200'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                จำได้แล้ว ({masteredCount})
+              </button>
+            </div>
+
             {isOwner && entries.length > 0 && (
               <button
                 type="button"
@@ -765,12 +1004,12 @@ export const SetDetailPage: React.FC = () => {
                   Selected {selectedIds.size} of {entries.length} words
                 </p>
                 <p className="text-[11px] text-text-secondary">
-                  Ready for batch removal
+                  Ready for batch action
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <Button
                 type="button"
                 variant="ghost"
@@ -778,6 +1017,32 @@ export const SetDetailPage: React.FC = () => {
                 onClick={() => setSelectedIds(new Set())}
               >
                 Cancel Selection
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => handleBatchSetMastered(true)}
+                disabled={isBatchUpdating}
+                className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-300"
+                title="Mark selected words as mastered"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
+                จำได้แล้ว ({selectedIds.size})
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => handleBatchSetMastered(false)}
+                disabled={isBatchUpdating}
+                className="bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-300"
+                title="Mark selected words as still learning"
+              >
+                <Clock className="w-4 h-4 mr-1 text-amber-600" />
+                ยังจำไม่ได้ ({selectedIds.size})
               </Button>
 
               <Button
@@ -816,9 +1081,21 @@ export const SetDetailPage: React.FC = () => {
               </Button>
             )}
           </Card>
+        ) : filteredEntries.length === 0 ? (
+          <Card className="py-12 text-center space-y-3 border-dashed border-2">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-surface-muted flex items-center justify-center text-text-muted">
+              {filterStatus === 'mastered' ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Clock className="w-6 h-6 text-amber-500" />}
+            </div>
+            <p className="text-sm font-semibold text-text-primary">
+              {filterStatus === 'mastered' ? 'ยังไม่มีคำศัพท์ที่ทำเครื่องหมายว่าจำได้แล้ว' : 'ไม่มีคำศัพท์ที่ยังจำไม่ได้ (จำได้ครบทุกคำแล้ว!)'}
+            </p>
+            <Button variant="secondary" size="sm" onClick={() => setFilterStatus('all')}>
+              แสดงคำศัพท์ทั้งหมด ({entries.length})
+            </Button>
+          </Card>
         ) : (
           <div className="space-y-2.5 sm:space-y-3">
-            {entries.map((entry, index) => {
+            {filteredEntries.map((entry, index) => {
               const phonetic = entry.audio_url
                 ? entry.audio_url.replace(/^reading_th:/, '')
                 : getThaiPhonetic(entry.word_en);
@@ -828,6 +1105,8 @@ export const SetDetailPage: React.FC = () => {
                 <Card
                   key={entry.id}
                   className={`p-3.5 sm:p-4 md:p-5 transition-all ${
+                    entry.is_mastered ? 'border-emerald-200/80 bg-emerald-50/20' : ''
+                  } ${
                     isSelected
                       ? 'border-primary bg-primary-light/10 shadow-sm'
                       : 'hover:border-primary/40'
@@ -852,7 +1131,7 @@ export const SetDetailPage: React.FC = () => {
                       )}
 
                       <div className="space-y-1 sm:space-y-1.5 flex-1 min-w-0">
-                        {/* Word line + Phonetics + POS Badge + EN Audio */}
+                        {/* Word line + Phonetics + POS Badge + Status Flag + EN Audio */}
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold text-text-muted select-none w-5">
                             {index + 1}.
@@ -880,6 +1159,34 @@ export const SetDetailPage: React.FC = () => {
                           <Badge pos={entry.part_of_speech} size="sm">
                             {entry.part_of_speech}
                           </Badge>
+
+                          {/* Quick Toggle Status Badge */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleMastered(entry.id, entry.is_mastered)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer ${
+                              entry.is_mastered
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 shadow-xs'
+                                : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
+                            }`}
+                            title={
+                              entry.is_mastered
+                                ? 'จำได้แล้ว (คลิกเพื่อเปลี่ยนเป็นยังจำไม่ได้)'
+                                : 'ยังจำไม่ได้ (คลิกเพื่อบันทึกว่าจำได้แล้ว)'
+                            }
+                          >
+                            {entry.is_mastered ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>จำได้แล้ว</span>
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                <span>ยังจำไม่ได้</span>
+                              </>
+                            )}
+                          </button>
                         </div>
 
                         {/* Thai meaning and example sentences */}

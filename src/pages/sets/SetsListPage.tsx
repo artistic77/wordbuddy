@@ -16,6 +16,7 @@ import {
   User as UserIcon,
   FolderHeart,
   FolderRoot,
+  CheckCircle2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -29,6 +30,7 @@ import type { VocabSet } from '../../types';
 
 interface SetWithCount extends VocabSet {
   wordCount?: number;
+  masteredCount?: number;
 }
 
 export const SetsListPage: React.FC = () => {
@@ -61,18 +63,25 @@ export const SetsListPage: React.FC = () => {
       // 2. Fetch entry counts per set
       const { data: entriesData, error: entriesErr } = await supabase
         .from('vocab_entries')
-        .select('set_id');
+        .select('set_id, is_mastered');
 
       if (entriesErr) throw entriesErr;
 
-      const countMap: Record<string, number> = {};
+      const countMap: Record<string, { total: number; mastered: number }> = {};
       (entriesData || []).forEach((entry) => {
-        countMap[entry.set_id] = (countMap[entry.set_id] || 0) + 1;
+        if (!countMap[entry.set_id]) {
+          countMap[entry.set_id] = { total: 0, mastered: 0 };
+        }
+        countMap[entry.set_id].total += 1;
+        if (entry.is_mastered) {
+          countMap[entry.set_id].mastered += 1;
+        }
       });
 
       const enriched = (setsData || []).map((s) => ({
         ...s,
-        wordCount: countMap[s.id] || 0,
+        wordCount: countMap[s.id]?.total || 0,
+        masteredCount: countMap[s.id]?.mastered || 0,
       }));
 
       setSets(enriched);
@@ -442,7 +451,34 @@ export const SetsListPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-border flex items-center justify-between">
+                  {/* Mastery Progress on card */}
+                  {(set.wordCount || 0) > 0 && (
+                    <div className="mb-3 space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-semibold">
+                        <span className="text-emerald-700 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                          จำได้แล้ว {(set as SetWithCount).masteredCount || 0}/{set.wordCount} คำ
+                        </span>
+                        <span className="text-text-muted">
+                          {Math.round(
+                            (((set as SetWithCount).masteredCount || 0) / (set.wordCount || 1)) * 100
+                          )}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${Math.round(
+                              (((set as SetWithCount).masteredCount || 0) / (set.wordCount || 1)) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-border flex items-center justify-between">
                     <Badge variant="noun" size="sm">
                       <BookOpen className="w-3 h-3 mr-1" />
                       {set.wordCount || 0} {set.wordCount === 1 ? 'word' : 'words'}

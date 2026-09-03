@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { liffService, type LineUserProfile } from '../services/liffService';
 import type { Profile } from '../types';
 
 interface AuthContextType {
@@ -10,10 +11,12 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   isConfigured: boolean;
+  isLiffClient: boolean;
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: Error | null; needsEmailConfirmation?: boolean }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signInWithLine: (lineProfile: LineUserProfile) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (displayName: string) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
@@ -26,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLiffClient, setIsLiffClient] = useState<boolean>(false);
 
   const fetchProfile = async (userId: string) => {
     if (!isSupabaseConfigured) return;
@@ -109,8 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) return { error: error as Error };
 
-      // Check if email confirmation is required
-      const needsEmailConfirmation = !data.session;
+      // Check if session was created immediately or needs email confirmation
+      const needsEmailConfirmation = !data.session && Boolean(data.user);
       return { error: null, needsEmailConfirmation };
     } catch (err) {
       return { error: err as Error };
@@ -141,10 +145,116 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: error as Error | null };
   };
 
+  const signInWithLine = async (lineProfile: LineUserProfile): Promise<{ error: Error | null }> => {
+    if (!isSupabaseConfigured) {
+      // Mock fallback when offline or Supabase not set
+      const mockUser = {
+        id: `line_${lineProfile.userId}`,
+        email: `${lineProfile.userId}@line.local`,
+      } as unknown as User;
+      setUser(mockUser);
+      setProfile({
+        id: mockUser.id,
+        display_name: lineProfile.displayName,
+        avatar_url: lineProfile.pictureUrl || null,
+        line_user_id: lineProfile.userId,
+        line_display_name: lineProfile.displayName,
+        line_picture_url: lineProfile.pictureUrl || null,
+        role: 'user',
+        is_suspended: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      return { error: null };
+    }
+
+    try {
+      const email = lineProfile.email || `line_${lineProfile.userId.toLowerCase()}@wordbuddy.line`;
+      const deterministicPassword = `LINE_WB_${lineProfile.userId}_AUTH!`;
+
+      // 1. Attempt login with deterministic credential
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email,
+        password: deterministicPassword,
+      });
+
+      let authUserId = signInData?.user?.id;
+
+      // 2. If user doesn't exist, sign them up
+      if (signInErr || !authUserId) {
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email,
+          password: deterministicPassword,
+          options: {
+            data: {
+              display_name: lineProfile.displayName,
+              avatar_url: lineProfile.pictureUrl || null,
+            },
+          },
+        });
+
+        if (!signUpErr && signUpData?.user) {
+          authUserId = signUpData.user.id;
+          // Set session if available
+          if (signUpData.session) {
+            setSession(signUpData.session);
+            setUser(signUpData.user);
+          }
+        }
+      }
+
+      // 3. Upsert profile with LINE UID and display data
+      if (authUserId) {
+        await supabase.from('profiles').upsert({
+          id: authUserId,
+          display_name: lineProfile.displayName,
+          avatar_url: lineProfile.pictureUrl || null,
+          line_user_id: lineProfile.userId,
+          line_display_name: lineProfile.displayName,
+          line_picture_url: lineProfile.pictureUrl || null,
+        });
+
+        await fetchProfile(authUserId);
+      }
+
+      return { error: null };
+    } catch (err) {
+      console.error('Failed to sign in with LINE:', err);
+      return { error: err as Error };
+    }
+  };
+
+  // Auto-login if opened inside LINE LIFF
+  useEffect(() => {
+    const checkLiffAutoLogin = async () => {
+      try {
+        const hasLiff = await liffService.init();
+        const inClient = liffService.isInClient();
+        setIsLiffClient(inClient);
+
+        if (hasLiff && inClient) {
+          if (liffService.isLoggedIn()) {
+            const lineProfile = await liffService.getProfile();
+            if (lineProfile && !user) {
+              await signInWithLine(lineProfile);
+            }
+          } else {
+            liffService.login();
+          }
+        }
+      } catch (err) {
+        console.error('Error during LIFF auto-login check:', err);
+      }
+    };
+
+    checkLiffAutoLogin();
+  }, [user]);
+
   const signOut = async () => {
     if (isSupabaseConfigured) {
       await supabase.auth.signOut();
     }
+    liffService.logout();
     setUser(null);
     setSession(null);
     setProfile(null);
@@ -183,10 +293,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isAdmin,
         isConfigured: isSupabaseConfigured,
+        isLiffClient,
         signInWithPassword,
         signUp,
         resetPassword,
         signInWithGoogle,
+        signInWithLine,
         signOut,
         updateProfile,
         refreshProfile,

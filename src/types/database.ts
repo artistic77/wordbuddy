@@ -32,6 +32,9 @@ export interface Database {
           id: string;
           display_name: string;
           avatar_url: string | null;
+          line_user_id: string | null;
+          line_display_name: string | null;
+          line_picture_url: string | null;
           role: UserRole;
           is_suspended: boolean;
           created_at: string;
@@ -41,6 +44,9 @@ export interface Database {
           id: string;
           display_name?: string;
           avatar_url?: string | null;
+          line_user_id?: string | null;
+          line_display_name?: string | null;
+          line_picture_url?: string | null;
           role?: UserRole;
           is_suspended?: boolean;
           created_at?: string;
@@ -50,6 +56,9 @@ export interface Database {
           id?: string;
           display_name?: string;
           avatar_url?: string | null;
+          line_user_id?: string | null;
+          line_display_name?: string | null;
+          line_picture_url?: string | null;
           role?: UserRole;
           is_suspended?: boolean;
           created_at?: string;
@@ -113,6 +122,7 @@ export interface Database {
           example_sentence_th: string | null;
           image_url: string | null;
           audio_url: string | null;
+          is_mastered: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -127,6 +137,7 @@ export interface Database {
           example_sentence_th?: string | null;
           image_url?: string | null;
           audio_url?: string | null;
+          is_mastered?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -141,6 +152,7 @@ export interface Database {
           example_sentence_th?: string | null;
           image_url?: string | null;
           audio_url?: string | null;
+          is_mastered?: boolean;
           created_at?: string;
           updated_at?: string;
         };

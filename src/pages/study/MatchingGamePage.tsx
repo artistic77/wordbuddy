@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Timer,
@@ -28,6 +28,8 @@ interface MatchTile {
 
 export const MatchingGamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const scope = searchParams.get('scope');
   const { user } = useAuth();
 
   const [set, setSet] = useState<VocabSet | null>(null);
@@ -114,8 +116,15 @@ export const MatchingGamePage: React.FC = () => {
         if (entriesErr) throw entriesErr;
 
         if (entriesData && entriesData.length > 0) {
-          setEntries(entriesData);
-          initGame(entriesData);
+          let wordsToStudy = entriesData;
+          if (scope === 'unmastered') {
+            const unmastered = wordsToStudy.filter((e) => !e.is_mastered);
+            if (unmastered.length > 0) {
+              wordsToStudy = unmastered;
+            }
+          }
+          setEntries(wordsToStudy);
+          initGame(wordsToStudy);
         }
       } catch (err) {
         console.error('Error loading game:', err);

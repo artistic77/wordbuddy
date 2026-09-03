@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Volume2,
@@ -22,6 +22,8 @@ import type { VocabSet, VocabEntry } from '../../types';
 
 export const FillBlankGamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const scope = searchParams.get('scope');
   const { user } = useAuth();
 
   const [set, setSet] = useState<VocabSet | null>(null);
@@ -81,7 +83,14 @@ export const FillBlankGamePage: React.FC = () => {
         if (entriesErr) throw entriesErr;
 
         if (entriesData && entriesData.length > 0) {
-          initGame(entriesData);
+          let wordsToStudy = entriesData;
+          if (scope === 'unmastered') {
+            const unmastered = wordsToStudy.filter((e) => !e.is_mastered);
+            if (unmastered.length > 0) {
+              wordsToStudy = unmastered;
+            }
+          }
+          initGame(wordsToStudy);
         }
       } catch (err) {
         console.error('Error loading fill in blank game:', err);

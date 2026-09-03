@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Volume2, RotateCcw, Check, X, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { GameHeader } from '../../components/study/GameHeader';
@@ -11,6 +11,8 @@ import type { VocabSet, VocabEntry } from '../../types';
 
 export const SpellingGamePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const scope = searchParams.get('scope');
   const navigate = useNavigate();
 
   const [set, setSet] = useState<VocabSet | null>(null);
@@ -43,7 +45,15 @@ export const SpellingGamePage: React.FC = () => {
           return;
         }
 
-        const shuffled = [...entriesData].sort(() => Math.random() - 0.5);
+        let wordsToStudy = entriesData;
+        if (scope === 'unmastered') {
+          const unmastered = wordsToStudy.filter((e) => !e.is_mastered);
+          if (unmastered.length > 0) {
+            wordsToStudy = unmastered;
+          }
+        }
+
+        const shuffled = [...wordsToStudy].sort(() => Math.random() - 0.5);
         setSet(setData);
         setWords(shuffled);
       } catch (err) {
