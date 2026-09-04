@@ -43,6 +43,7 @@ jobs:
           VITE_AZURE_OPENAI_DEPLOYMENT: ${{ secrets.VITE_AZURE_OPENAI_DEPLOYMENT }}${{ vars.VITE_AZURE_OPENAI_DEPLOYMENT }}
           VITE_AZURE_OPENAI_API_VERSION: ${{ secrets.VITE_AZURE_OPENAI_API_VERSION }}${{ vars.VITE_AZURE_OPENAI_API_VERSION }}
           VITE_OCR_SPACE_API_KEY: ${{ secrets.VITE_OCR_SPACE_API_KEY }}${{ vars.VITE_OCR_SPACE_API_KEY }}
+          VITE_LIFF_ID: ${{ secrets.VITE_LIFF_ID }}${{ vars.VITE_LIFF_ID }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
