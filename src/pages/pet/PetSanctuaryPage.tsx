@@ -1061,8 +1061,14 @@ export const PetSanctuaryPage: React.FC = () => {
 
       {/* Modal: Feed Items from Inventory */}
       {isFeedModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <Card className="w-full max-w-lg p-6 sm:p-8 space-y-6 shadow-2xl relative">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto"
+          onClick={() => setIsFeedModalOpen(false)}
+        >
+          <Card
+            className="w-full max-w-lg p-5 sm:p-8 space-y-5 shadow-2xl relative my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div>
                 <h3 className="text-xl font-outfit font-bold text-text-primary">
@@ -1142,24 +1148,24 @@ export const PetSanctuaryPage: React.FC = () => {
       {/* Modal: Wardrobe & Dress Up (20 Glasses & 20 Outfits) */}
       {isWardrobeModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-md animate-fade-in overflow-y-auto"
           onClick={() => setIsWardrobeModalOpen(false)}
         >
           <Card
-            className="w-full max-w-4xl p-0 shadow-2xl relative max-h-[88vh] flex flex-col bg-white overflow-hidden border-2 border-purple-300"
+            className="w-full max-w-4xl p-0 shadow-2xl relative my-auto max-h-[calc(100dvh-2rem)] flex flex-col bg-white overflow-hidden border-2 border-purple-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 sm:p-6 border-b border-border bg-purple-50 sticky top-0 z-10">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-purple-50 sticky top-0 z-10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-200 text-purple-700 flex items-center justify-center text-xl shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-purple-200 text-purple-700 flex items-center justify-center text-xl shadow-xs flex-shrink-0">
                   👗
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-outfit font-bold text-text-primary">
+                  <h3 className="text-lg sm:text-2xl font-outfit font-bold text-text-primary">
                     Pet Wardrobe (ห้องแต่งตัวสัตว์เลี้ยง)
                   </h3>
-                  <p className="text-xs text-text-secondary mt-0.5 font-sarabun">
+                  <p className="text-[11px] sm:text-xs text-text-secondary mt-0.5 font-sarabun">
                     สวมใส่แว่นตาและชุดเสื้อผ้าแฟชั่นเพื่อเพิ่มสเตตัสให้ {pet.nameTh || pet.name}
                   </p>
                 </div>
@@ -1167,7 +1173,7 @@ export const PetSanctuaryPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsWardrobeModalOpen(false)}
-                className="p-2.5 text-text-secondary hover:text-text-primary rounded-2xl bg-white hover:bg-surface-elevated border border-border transition-all active:scale-95"
+                className="p-2 sm:p-2.5 text-text-secondary hover:text-text-primary rounded-2xl bg-white hover:bg-surface-elevated border border-border transition-all active:scale-95 flex-shrink-0 ml-2"
                 title="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -1175,11 +1181,11 @@ export const PetSanctuaryPage: React.FC = () => {
             </div>
 
             {/* Sub-Navigation Tabs */}
-            <div className="flex items-center gap-2 p-4 bg-slate-50 border-b border-border">
+            <div className="flex items-center gap-2 p-3 sm:p-4 bg-slate-50 border-b border-border overflow-x-auto touch-pan-x flex-wrap">
               <button
                 type="button"
                 onClick={() => setWardrobeTab('glasses')}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                   wardrobeTab === 'glasses'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'bg-white text-text-secondary border border-border hover:bg-slate-100'
@@ -1190,7 +1196,7 @@ export const PetSanctuaryPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setWardrobeTab('outfit')}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
                   wardrobeTab === 'outfit'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'bg-white text-text-secondary border border-border hover:bg-slate-100'
@@ -1201,15 +1207,15 @@ export const PetSanctuaryPage: React.FC = () => {
 
               <div className="ml-auto">
                 <Link to="/shop">
-                  <Button variant="secondary" size="sm">
-                    <ShoppingBag className="w-3.5 h-3.5 mr-1" /> ไปร้านค้าซื้อชุด
+                  <Button variant="secondary" size="sm" className="h-8 text-xs">
+                    <ShoppingBag className="w-3.5 h-3.5 mr-1" /> ร้านค้า
                   </Button>
                 </Link>
               </div>
             </div>
 
             {/* Wardrobe Items Grid */}
-            <div className="p-5 sm:p-6 overflow-y-auto flex-1">
+            <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3.5">
                 {(wardrobeTab === 'glasses' ? FASHION_GLASSES : FASHION_OUTFITS).map((item, idx) => {
                   const owned = (inventory[item.id] || 0) > 0;
@@ -1306,24 +1312,24 @@ export const PetSanctuaryPage: React.FC = () => {
       {/* Modal: Switch Companion (All 10 Pets) */}
       {isSwitchPetOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-md animate-fade-in overflow-y-auto"
           onClick={() => setIsSwitchPetOpen(false)}
         >
           <Card
-            className="w-full max-w-4xl p-0 shadow-2xl relative max-h-[88vh] flex flex-col bg-white overflow-hidden border-2 border-primary/20"
+            className="w-full max-w-4xl p-0 shadow-2xl relative my-auto max-h-[calc(100dvh-2rem)] flex flex-col bg-white overflow-hidden border-2 border-primary/20"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 sm:p-6 border-b border-border bg-slate-50 sticky top-0 z-10">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-slate-50 sticky top-0 z-10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-primary-light flex items-center justify-center text-xl shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-primary-light flex items-center justify-center text-xl shadow-xs flex-shrink-0">
                   🐾
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-outfit font-bold text-text-primary">
+                  <h3 className="text-lg sm:text-2xl font-outfit font-bold text-text-primary">
                     Choose Your Companion (เลือกสัตว์เลี้ยง 10 แบบ)
                   </h3>
-                  <p className="text-xs text-text-secondary mt-0.5 font-sarabun">
+                  <p className="text-[11px] sm:text-xs text-text-secondary mt-0.5 font-sarabun">
                     เลือกคู่หูตัวโปรดเพื่อร่วมฝึกฝนและผจญภัยสู้บอส
                   </p>
                 </div>
@@ -1331,7 +1337,7 @@ export const PetSanctuaryPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsSwitchPetOpen(false)}
-                className="p-2.5 text-text-secondary hover:text-text-primary rounded-2xl bg-white hover:bg-surface-elevated border border-border transition-all active:scale-95"
+                className="p-2 sm:p-2.5 text-text-secondary hover:text-text-primary rounded-2xl bg-white hover:bg-surface-elevated border border-border transition-all active:scale-95 flex-shrink-0 ml-2"
                 title="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -1339,7 +1345,7 @@ export const PetSanctuaryPage: React.FC = () => {
             </div>
 
             {/* Pets Grid */}
-            <div className="p-5 sm:p-6 overflow-y-auto flex-1">
+            <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 sm:gap-4">
                 {PET_ROSTER.map((p, idx) => {
                   const isSelected = pet.type === p.type;

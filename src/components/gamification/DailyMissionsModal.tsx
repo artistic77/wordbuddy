@@ -42,24 +42,24 @@ export const DailyMissionsModal: React.FC<DailyMissionsModalProps> = ({ isOpen, 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <Card
-        className="w-full max-w-lg p-0 max-h-[85vh] flex flex-col shadow-2xl relative border-primary/20 bg-white overflow-hidden"
+        className="w-full max-w-lg p-0 my-auto max-h-[calc(100dvh-2rem)] flex flex-col shadow-2xl relative border-primary/20 bg-white overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-border bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-white sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-primary-light flex items-center justify-center text-2xl shadow-sm">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-primary-light flex items-center justify-center text-xl sm:text-2xl shadow-sm flex-shrink-0">
               🎯
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-outfit font-bold text-text-primary">
+              <h2 className="text-lg sm:text-2xl font-outfit font-bold text-text-primary">
                 Daily Missions
               </h2>
-              <p className="text-xs text-text-secondary mt-0.5 font-sarabun">
+              <p className="text-[11px] sm:text-xs text-text-secondary mt-0.5 font-sarabun">
                 ภารกิจประจำวันเพื่อรับเหรียญ 🪙 และ EXP สัตว์เลี้ยง
               </p>
             </div>
@@ -67,7 +67,7 @@ export const DailyMissionsModal: React.FC<DailyMissionsModalProps> = ({ isOpen, 
           <button
             type="button"
             onClick={onClose}
-            className="p-2.5 text-text-secondary hover:text-text-primary rounded-2xl bg-surface hover:bg-surface-elevated border border-border transition-all active:scale-95"
+            className="p-2 sm:p-2.5 text-text-secondary hover:text-text-primary rounded-2xl bg-surface hover:bg-surface-elevated border border-border transition-all active:scale-95 flex-shrink-0 ml-2"
             title="Close modal"
           >
             <X className="w-5 h-5" />
@@ -75,7 +75,7 @@ export const DailyMissionsModal: React.FC<DailyMissionsModalProps> = ({ isOpen, 
         </div>
 
         {/* Scrollable Content Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1 min-h-0">
           {/* Claim Notice */}
           {claimedNotice && (
             <div className="p-3.5 bg-accent-green-light border border-accent-green text-green-900 rounded-xl text-xs font-bold flex items-center gap-2 animate-bounce">

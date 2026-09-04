@@ -725,63 +725,63 @@ export const SetDetailPage: React.FC = () => {
             </div>
 
             {/* Stat Badges */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-1">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-4 pt-1">
               <div
                 onClick={() => setFilterStatus('mastered')}
-                className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-2 ${
+                className={`p-2 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 ${
                   filterStatus === 'mastered'
                     ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-200'
                     : 'bg-white/90 border-emerald-200/80 hover:border-emerald-300'
                 }`}
                 title="คลิกเพื่อกรองเฉพาะคำที่จำได้แล้ว"
               >
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
-                  <CheckCircle2 className="w-4 h-4" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <div>
-                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium">จำได้แล้ว</p>
-                  <p className="text-base sm:text-lg font-bold font-outfit text-emerald-700">
-                    {masteredCount} <span className="text-xs font-normal">คำ</span>
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium truncate">จำได้แล้ว</p>
+                  <p className="text-sm sm:text-lg font-bold font-outfit text-emerald-700">
+                    {masteredCount} <span className="text-[10px] sm:text-xs font-normal">คำ</span>
                   </p>
                 </div>
               </div>
 
               <div
                 onClick={() => setFilterStatus('unmastered')}
-                className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-2 ${
+                className={`p-2 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 ${
                   filterStatus === 'unmastered'
                     ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-200'
                     : 'bg-white/90 border-amber-200/80 hover:border-amber-300'
                 }`}
                 title="คลิกเพื่อกรองเฉพาะคำที่ยังจำไม่ได้"
               >
-                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
-                  <Clock className="w-4 h-4" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
+                  <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <div>
-                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium">ยังจำไม่ได้</p>
-                  <p className="text-base sm:text-lg font-bold font-outfit text-amber-700">
-                    {unmasteredCount} <span className="text-xs font-normal">คำ</span>
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium truncate">ยังจำไม่ได้</p>
+                  <p className="text-sm sm:text-lg font-bold font-outfit text-amber-700">
+                    {unmasteredCount} <span className="text-[10px] sm:text-xs font-normal">คำ</span>
                   </p>
                 </div>
               </div>
 
               <div
                 onClick={() => setFilterStatus('all')}
-                className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-2 ${
+                className={`p-2 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 ${
                   filterStatus === 'all'
                     ? 'bg-primary-light/40 border-primary ring-2 ring-primary/20'
                     : 'bg-white/90 border-border hover:border-primary/40'
                 }`}
                 title="คลิกเพื่อดูคำศัพท์ทั้งหมด"
               >
-                <div className="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
-                  <BookOpen className="w-4 h-4" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
+                  <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <div>
-                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium">ทั้งหมด</p>
-                  <p className="text-base sm:text-lg font-bold font-outfit text-primary">
-                    {entries.length} <span className="text-xs font-normal">คำ</span>
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium truncate">ทั้งหมด</p>
+                  <p className="text-sm sm:text-lg font-bold font-outfit text-primary">
+                    {entries.length} <span className="text-[10px] sm:text-xs font-normal">คำ</span>
                   </p>
                 </div>
               </div>
@@ -798,30 +798,30 @@ export const SetDetailPage: React.FC = () => {
               </h3>
 
               {/* Study Scope Toggle: ฝึกเฉพาะคำที่ยังจำไม่ได้ vs ฝึกทุกคำ */}
-              <div className="inline-flex p-1 bg-surface-muted rounded-xl border border-border/80 text-xs font-semibold self-start sm:self-auto">
+              <div className="w-full sm:w-auto grid grid-cols-2 sm:flex p-1 bg-surface-muted rounded-xl border border-border/80 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setStudyScope('unmastered')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-center ${
                     studyScope === 'unmastered'
                       ? 'bg-white text-amber-800 shadow-xs font-bold border border-amber-200'
                       : 'text-text-secondary hover:text-text-primary'
                   }`}
                 >
-                  <Clock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>ฝึกเฉพาะคำที่ยังจำไม่ได้ ({unmasteredCount})</span>
+                  <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                  <span className="truncate">ยังจำไม่ได้ ({unmasteredCount})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setStudyScope('all')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-center ${
                     studyScope === 'all'
                       ? 'bg-white text-primary shadow-xs font-bold border border-primary/20'
                       : 'text-text-secondary hover:text-text-primary'
                   }`}
                 >
-                  <BookOpen className="w-3.5 h-3.5 text-primary" />
-                  <span>ฝึกทั้งหมด ({entries.length})</span>
+                  <BookOpen className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                  <span className="truncate">ฝึกทั้งหมด ({entries.length})</span>
                 </button>
               </div>
             </div>

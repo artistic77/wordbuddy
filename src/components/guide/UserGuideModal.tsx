@@ -34,29 +34,29 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <Card
-        className="w-full max-w-3xl p-0 max-h-[90vh] flex flex-col shadow-2xl relative border-primary/20 bg-white overflow-hidden"
+        className="w-full max-w-3xl p-0 my-auto max-h-[calc(100dvh-2rem)] flex flex-col shadow-2xl relative border-primary/20 bg-white overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-border bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-primary-light flex items-center justify-center text-xl shadow-sm">
+        <div className="flex items-center justify-between p-3.5 sm:p-5 border-b border-border bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-primary-light flex items-center justify-center text-lg sm:text-xl shadow-sm flex-shrink-0">
               📖
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-outfit font-bold text-text-primary">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h2 className="text-base sm:text-xl font-outfit font-bold text-text-primary truncate">
                   คู่มือการใช้งาน Word Buddy
                 </h2>
-                <Badge variant="noun" size="sm">
+                <Badge variant="noun" size="sm" className="hidden xs:inline-flex">
                   Quick Guide
                 </Badge>
               </div>
-              <p className="text-xs text-text-secondary font-sarabun">
+              <p className="text-[11px] sm:text-xs text-text-secondary font-sarabun line-clamp-1 sm:line-clamp-none">
                 เรียนรู้ฟีเจอร์เด่นและวิธีเล่นแบบกระชับ เข้าใจง่ายใน 1 นาที
               </p>
             </div>
@@ -64,7 +64,7 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose 
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-text-secondary hover:text-text-primary rounded-xl bg-surface hover:bg-surface-elevated border border-border transition-all active:scale-95"
+            className="p-2 text-text-secondary hover:text-text-primary rounded-xl bg-surface hover:bg-surface-elevated border border-border transition-all active:scale-95 flex-shrink-0 ml-2"
             title="ปิดหน้าต่าง"
           >
             <X className="w-5 h-5" />
@@ -72,12 +72,12 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose 
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-border bg-slate-50/80 px-4 pt-2 gap-1 overflow-x-auto no-scrollbar flex-shrink-0">
+        <div className="flex border-b border-border bg-slate-50/80 px-3 sm:px-4 pt-2 gap-1 overflow-x-auto touch-pan-x no-scrollbar flex-shrink-0">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
                 activeTab === t.id
                   ? 'border-primary text-primary bg-white shadow-sm'
                   : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-white/50'
@@ -90,7 +90,7 @@ export const UserGuideModal: React.FC<UserGuideModalProps> = ({ isOpen, onClose 
         </div>
 
         {/* Tab Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 font-sarabun text-sm text-text-secondary space-y-4">
+        <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 min-h-0 font-sarabun text-sm text-text-secondary space-y-4">
           {/* TAB 1: เริ่มต้นใช้งาน */}
           {activeTab === 'start' && (
             <div className="space-y-4">

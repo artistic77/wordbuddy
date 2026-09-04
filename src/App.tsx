@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/layout/Navbar';
+import { BottomNav } from './components/layout/BottomNav';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
@@ -232,7 +233,7 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <div className="min-h-screen flex flex-col bg-surface">
             <Navbar />
-            <main className="flex-1">
+            <main className="flex-1 pb-16 md:pb-0">
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<HomePage />} />
@@ -366,6 +367,7 @@ export const App: React.FC = () => {
                 />
               </Routes>
             </main>
+            <BottomNav />
           </div>
         </BrowserRouter>
       </AuthProvider>

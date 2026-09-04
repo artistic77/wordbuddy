@@ -286,10 +286,10 @@ export const BossBattlePage: React.FC = () => {
             )}
 
             {/* Duel Characters & HP Bars */}
-            <div className="grid grid-cols-2 gap-6 sm:gap-12 items-center py-4 sm:py-8">
+            <div className="grid grid-cols-2 gap-3 sm:gap-12 items-center py-3 sm:py-8">
               {/* Left: Player Pet */}
-              <div className="space-y-3 text-center sm:text-left">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto sm:mx-0 flex items-center justify-center">
+              <div className="space-y-2.5 text-center sm:text-left">
+                <div className="w-20 h-20 sm:w-28 sm:h-28 mx-auto sm:mx-0 flex items-center justify-center">
                   <PetAvatar
                     type={pet.type}
                     size="sm"
