@@ -22,23 +22,25 @@ export const processAndCompressImage = (
   maxDimension = 1600,
   quality = 0.85
 ): Promise<ProcessedImage> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    if (!file || file.size === 0) {
+      return reject(new Error('ไม่พบข้อมูลไฟล์ภาพ หรือไฟล์มีขนาด 0 byte กรุณาลองใหม่อีกครั้ง'));
+    }
+
     console.log(`[Image Utils] Selected file: "${file.name}" | Size: ${(file.size / 1024).toFixed(1)} KB | Type: "${file.type}"`);
 
     const reader = new FileReader();
 
-    reader.onerror = () => {
-      console.warn('[Image Utils] FileReader failed to read file.');
-      resolve({
-        base64: '',
-        mimeType: file.type || 'image/jpeg',
-        width: 0,
-        height: 0,
-      });
+    reader.onerror = (err) => {
+      console.warn('[Image Utils] FileReader failed to read file:', err);
+      reject(new Error('ไม่สามารถอ่านไฟล์ภาพจากเครื่องได้ กรุณาลองใหม่อีกครั้ง'));
     };
 
     reader.onload = () => {
       const rawBase64 = reader.result as string;
+      if (!rawBase64 || rawBase64.length < 50) {
+        return reject(new Error('ข้อมูลไฟล์ภาพไม่สมบูรณ์ กรุณาลองเลือกรูปใหม่อีกครั้ง'));
+      }
 
       // Create an image element to attempt scaling & JPEG compression
       const img = new Image();

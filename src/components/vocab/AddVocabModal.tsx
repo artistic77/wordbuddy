@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Wand2,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -29,6 +30,7 @@ import {
 import { speakWord } from '../../services/ttsService';
 import { getThaiPhonetic } from '../../services/phoneticService';
 import { processAndCompressImage } from '../../utils/imageUtils';
+import { liffService } from '../../services/liffService';
 import type { PartOfSpeech, TranslationResponse } from '../../types';
 
 export interface VocabEntryDraft {
@@ -273,7 +275,10 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   // Tab 3: Photo / Worksheet Scan (Camera + Gallery Upload)
   // --------------------------------------------------------------------------
   const handleProcessFile = async (file: File) => {
-    if (!file) return;
+    if (!file || file.size === 0) {
+      setError('ไฟล์ภาพไม่ถูกต้องหรือมีขนาด 0 byte กรุณาลองใหม่อีกครั้ง');
+      return;
+    }
 
     // Ensure tab remains on photo scan
     setActiveTab('photo');
@@ -1069,33 +1074,6 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
           {/* ================================================================= */}
           {activeTab === 'photo' && (
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-              {/* Hidden File Inputs */}
-              <input
-                id="camera-upload-input"
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleProcessFile(file);
-                  e.target.value = '';
-                }}
-              />
-              <input
-                id="gallery-upload-input"
-                ref={galleryInputRef}
-                type="file"
-                accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleProcessFile(file);
-                  e.target.value = '';
-                }}
-              />
-
               {extractedWords.length === 0 ? (
                 <div className="space-y-4">
                   {isProcessingBatch && imagePreview ? (
@@ -1154,26 +1132,61 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                           </p>
                         </div>
 
-                        {/* Dual Action Native Labels/Buttons */}
+                        {/* Dual Action Native Input Buttons (Transparent Native Overlay for LINE WebView / Mobile compatibility) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                           {/* 1. Take Photo (Camera) */}
-                          <label
-                            htmlFor="camera-upload-input"
-                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer select-none"
-                          >
-                            <Camera className="w-4 h-4 flex-shrink-0" />
-                            <span>ถ่ายภาพทันที</span>
-                          </label>
+                          <div className="relative flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer select-none overflow-hidden">
+                            <input
+                              id="camera-upload-input"
+                              ref={cameraInputRef}
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleProcessFile(file);
+                                e.target.value = '';
+                              }}
+                            />
+                            <Camera className="w-4 h-4 flex-shrink-0 pointer-events-none" />
+                            <span className="pointer-events-none">ถ่ายภาพทันที</span>
+                          </div>
 
                           {/* 2. Upload Image (Gallery / Files) */}
-                          <label
-                            htmlFor="gallery-upload-input"
-                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none"
-                          >
-                            <ImageIcon className="w-4 h-4 flex-shrink-0" />
-                            <span>เลือกรูปจากเครื่อง</span>
-                          </label>
+                          <div className="relative flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none overflow-hidden">
+                            <input
+                              id="gallery-upload-input"
+                              ref={galleryInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleProcessFile(file);
+                                e.target.value = '';
+                              }}
+                            />
+                            <ImageIcon className="w-4 h-4 flex-shrink-0 pointer-events-none" />
+                            <span className="pointer-events-none">เลือกรูปจากเครื่อง</span>
+                          </div>
                         </div>
+
+                        {/* LINE In-App Browser Helper: Open in External Browser if device restricts WebView uploads */}
+                        {liffService.isInClient() && (
+                          <div className="mt-3 p-2.5 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-800 text-xs flex flex-col sm:flex-row items-center justify-between gap-2 text-left">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium">💡 เล่นผ่าน LINE: หากกดเลือกรูปแล้วเครื่องไม่ตอบสนอง</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => liffService.openExternal()}
+                              className="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 underline whitespace-nowrap"
+                            >
+                              เปิดใน Chrome / Safari <ExternalLink className="w-3.5 h-3.5 ml-0.5" />
+                            </button>
+                          </div>
+                        )}
 
                         <p className="text-[11px] text-text-muted pt-1">
                           รองรับการถ่ายรูป, เลือกรูปจากคลังภาพ, แคปหน้าจอ หรือลากไฟล์มาวาง (JPG, PNG, WebP)

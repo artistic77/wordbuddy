@@ -60,6 +60,25 @@ export const liffService = {
   },
 
   /**
+   * Open the current page or a specific URL in external default browser (Chrome / Safari)
+   */
+  openExternal(url?: string): void {
+    const targetUrl = url || window.location.href;
+    try {
+      if (isInitialized && liff.isInClient()) {
+        liff.openWindow({
+          url: targetUrl,
+          external: true,
+        });
+        return;
+      }
+    } catch (err) {
+      console.warn('[LIFF] Failed to open external browser via liff.openWindow:', err);
+    }
+    window.open(targetUrl, '_blank');
+  },
+
+  /**
    * Check if user is logged in via LINE
    */
   isLoggedIn(): boolean {
