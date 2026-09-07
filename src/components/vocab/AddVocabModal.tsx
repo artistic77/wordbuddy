@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   X,
   Sparkles,
@@ -132,6 +132,67 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Track whether we returned from a camera capture where the WebView was killed
+  const [showCameraRetryHint, setShowCameraRetryHint] = useState(false);
+
+  // ---------------------------------------------------------------------------
+  // LINE WebView Camera Lifecycle Recovery
+  // ---------------------------------------------------------------------------
+  // On Android, opening the camera from LINE in-app browser may cause the OS
+  // to kill the WebView process to free RAM. When the user returns after
+  // confirming the photo, the page reloads from scratch, losing all JS state
+  // including the onChange handler. We detect this by setting a sessionStorage
+  // flag before the camera opens, and checking for it on mount.
+  // ---------------------------------------------------------------------------
+  const CAMERA_PENDING_KEY = 'wb_camera_pending';
+
+  useEffect(() => {
+    try {
+      const pending = sessionStorage.getItem(CAMERA_PENDING_KEY);
+      if (pending) {
+        // Page was reloaded by Android after camera capture
+        sessionStorage.removeItem(CAMERA_PENDING_KEY);
+        console.warn('[AddVocabModal] Detected page reload after camera capture (LINE WebView lifecycle). Showing retry hint.');
+        setActiveTab('photo');
+        setShowCameraRetryHint(true);
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mark that we are about to open camera/gallery so we can detect reload
+  const markCameraPending = useCallback(() => {
+    try {
+      sessionStorage.setItem(CAMERA_PENDING_KEY, Date.now().toString());
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const clearCameraPending = useCallback(() => {
+    try {
+      sessionStorage.removeItem(CAMERA_PENDING_KEY);
+    } catch {
+      // ignore
+    }
+    setShowCameraRetryHint(false);
+  }, []);
+
+  // Listen for visibilitychange — when user returns from camera without page
+  // reload, the change event may still fire normally. But if it doesn't, we
+  // can at least re-check and log.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[AddVocabModal] Page became visible again (returned from camera/gallery).');
+        // Clear pending flag since the page wasn't killed
+        clearCameraPending();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [clearCameraPending]);
 
   if (!isOpen) return null;
 
@@ -1132,6 +1193,26 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                           </p>
                         </div>
 
+                        {/* Camera Retry Hint — shown when WebView was killed & reloaded by Android during camera capture */}
+                        {showCameraRetryHint && (
+                          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-2 animate-fade-in">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="font-bold">ภาพที่ถ่ายไม่ถูกส่งเข้ามา</p>
+                                <p className="mt-1">เนื่องจาก LINE App ทำการ reload หน้าระหว่างที่เปิดกล้อง กรุณาลองใหม่โดย<strong>เลือกรูปจากคลังภาพ (Gallery)</strong> แทนการถ่ายรูปโดยตรง หรือเปิดใน Chrome/Safari</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowCameraRetryHint(false)}
+                              className="text-xs font-semibold text-amber-700 underline"
+                            >
+                              ปิดข้อความนี้
+                            </button>
+                          </div>
+                        )}
+
                         {/* Dual Action Native Input Buttons (Transparent Native Overlay for LINE WebView / Mobile compatibility) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                           {/* 1. Take Photo (Camera) */}
@@ -1143,7 +1224,9 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                               accept="image/*"
                               capture="environment"
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onClick={() => markCameraPending()}
                               onChange={(e) => {
+                                clearCameraPending();
                                 const file = e.target.files?.[0];
                                 if (file) handleProcessFile(file);
                                 e.target.value = '';
@@ -1161,7 +1244,9 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                               type="file"
                               accept="image/*"
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onClick={() => markCameraPending()}
                               onChange={(e) => {
+                                clearCameraPending();
                                 const file = e.target.files?.[0];
                                 if (file) handleProcessFile(file);
                                 e.target.value = '';
