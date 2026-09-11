@@ -4,6 +4,8 @@
  * Optimized for mobile devices, low memory, and Android WebView in LINE LIFF.
  */
 
+import { addLiffLog } from './liffDebug';
+
 export interface ProcessedImage {
   base64: string;
   mimeType: string;
@@ -24,7 +26,9 @@ export const processAndCompressImage = async (
   maxDimension = 1600,
   quality = 0.85
 ): Promise<ProcessedImage> => {
+  addLiffLog(`📸 processAndCompressImage: "${file?.name}" (${((file?.size || 0) / 1024).toFixed(1)} KB, type: "${file?.type}")`);
   if (!file || file.size === 0) {
+    addLiffLog(`❌ File is empty or 0 byte`);
     throw new Error('ไม่พบข้อมูลไฟล์ภาพ หรือไฟล์มีขนาด 0 byte กรุณาลองใหม่อีกครั้ง');
   }
 
@@ -35,14 +39,10 @@ export const processAndCompressImage = async (
     file.name.toLowerCase().endsWith('.heic') ||
     file.name.toLowerCase().endsWith('.heif');
 
-  console.log(
-    `[Image Utils] Processing file: "${file.name}" | Size: ${(file.size / 1024).toFixed(1)} KB | Type: "${file.type}"`
-  );
-
   // Strategy 1: Native createImageBitmap (Fastest, hardware accelerated, supported in Android WebView 50+)
   if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
     try {
-      console.log('[Image Utils] Decoding image via createImageBitmap...');
+      addLiffLog(`⏳ Decoding with native createImageBitmap...`);
       const bitmap = await createImageBitmap(file);
       let { width, height } = bitmap;
 
@@ -72,7 +72,7 @@ export const processAndCompressImage = async (
         bitmap.close(); // release native GPU memory immediately
 
         const base64 = canvas.toDataURL('image/jpeg', quality);
-        console.log(`[Image Utils] createImageBitmap success: ${width}x${height}px (Base64 length: ${base64.length})`);
+        addLiffLog(`✅ createImageBitmap success: ${width}x${height}px (Base64: ${(base64.length / 1024).toFixed(1)} KB)`);
         return {
           base64,
           mimeType: 'image/jpeg',
@@ -80,8 +80,8 @@ export const processAndCompressImage = async (
           height,
         };
       }
-    } catch (bitmapErr) {
-      console.warn('[Image Utils] createImageBitmap failed, falling back to FileReader DataURL:', bitmapErr);
+    } catch (bitmapErr: any) {
+      addLiffLog(`⚠️ createImageBitmap failed: ${bitmapErr?.message || bitmapErr}. Trying FileReader DataURL...`);
       if (isHeic) {
         throw new Error(
           'รูปภาพเป็นรูปแบบ HEIC จากกล้องมือถือ ซึ่งระบบไม่รองรับ กรุณาเลือกไฟล์ JPG หรือ PNG หรือกดถ่ายภาพจากในแอปโดยตรง'
@@ -91,15 +91,18 @@ export const processAndCompressImage = async (
   }
 
   // Strategy 2: FileReader Data URL + Image (Universal fallback for all WebViews)
+  addLiffLog(`⏳ Strategy 2: Reading file via FileReader DataURL...`);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
     const timeoutId = setTimeout(() => {
+      addLiffLog(`❌ FileReader timed out after 15s`);
       reject(new Error('การโหลดรูปภาพใช้เวลานานเกินไป กรุณาลองเลือกรูปภาพใหม่อีกครั้ง'));
     }, 15000);
 
     reader.onerror = (err) => {
       clearTimeout(timeoutId);
+      addLiffLog(`❌ FileReader.onerror triggered`);
       console.error('[Image Utils] FileReader failed:', err);
       reject(new Error('ไม่สามารถอ่านไฟล์ภาพจากเครื่องได้'));
     };
@@ -107,12 +110,14 @@ export const processAndCompressImage = async (
     reader.onload = () => {
       clearTimeout(timeoutId);
       const dataUrl = reader.result as string;
+      addLiffLog(`📥 FileReader.onload: DataURL length ${(dataUrl?.length || 0) / 1024} KB`);
       if (!dataUrl || dataUrl.length < 50) {
         return reject(new Error('ข้อมูลไฟล์ภาพไม่สมบูรณ์'));
       }
 
       const img = new Image();
       img.onerror = () => {
+        addLiffLog(`❌ img.onerror on DataURL`);
         if (isHeic) {
           reject(
             new Error(

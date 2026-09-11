@@ -32,6 +32,7 @@ import { speakWord } from '../../services/ttsService';
 import { getThaiPhonetic } from '../../services/phoneticService';
 import { processAndCompressImage, processCanvasSnapshot, type ProcessedImage } from '../../utils/imageUtils';
 import { liffService } from '../../services/liffService';
+import { addLiffLog, getLiffLogs, subscribeLiffLogs, clearLiffLogs } from '../../utils/liffDebug';
 import type { PartOfSpeech, TranslationResponse } from '../../types';
 
 export interface VocabEntryDraft {
@@ -167,6 +168,28 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   // Track whether we returned from a camera capture where the WebView was killed
   const [showCameraRetryHint, setShowCameraRetryHint] = useState(false);
+
+  // LIFF on-screen debugger state
+  const [debugLogs, setDebugLogs] = useState<string[]>(() => getLiffLogs());
+  const [copiedLogs, setCopiedLogs] = useState(false);
+
+  useEffect(() => {
+    return subscribeLiffLogs((newLogs) => {
+      setDebugLogs([...newLogs]);
+    });
+  }, []);
+
+  useEffect(() => {
+    const input = galleryInputRef.current;
+    if (!input) return;
+    const handleCancel = () => {
+      addLiffLog('⚠️ galleryInput cancel event fired (picker closed without file)');
+    };
+    input.addEventListener('cancel', handleCancel);
+    return () => {
+      input.removeEventListener('cancel', handleCancel);
+    };
+  }, []);
 
   const startInAppCamera = async (facing: 'environment' | 'user' = 'environment') => {
     setError(null);
@@ -444,10 +467,12 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   // Tab 3: Photo / Worksheet Scan (Camera + Gallery Upload)
   // --------------------------------------------------------------------------
   const executeVisionScan = async (processed: ProcessedImage) => {
+    addLiffLog(`📸 executeVisionScan called: ${processed.width}x${processed.height}px, Base64: ${(processed.base64.length / 1024).toFixed(1)} KB`);
     setBatchStepMessage('กำลังสแกนใบงานด้วย Multimodal AI Vision...');
 
     // Extract vocabulary words & sheet title using Multimodal Vision AI
     const sheetResult = await extractVocabSheetFromImage(processed.base64, processed.mimeType);
+    addLiffLog(`🤖 AI Vision finished. Title: "${sheetResult.title || ''}", Entries: ${sheetResult.entries?.length ?? 0}, Words: ${sheetResult.words?.length ?? 0}`);
 
     if (sheetResult.title) {
       setDetectedSheetTitle(sheetResult.title);
@@ -474,6 +499,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
       });
     } else if (sheetResult.words && sheetResult.words.length > 0) {
       setBatchStepMessage(`AI พบ ${sheetResult.words.length} คำศัพท์! กำลังแปลความหมายและคำอ่านไทย...`);
+      addLiffLog(`🌐 Translating ${sheetResult.words.length} extracted words...`);
 
       // Batch translate all extracted words
       const translations: TranslationResponse[] = await batchTranslateWords(sheetResult.words);
@@ -495,11 +521,13 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
         };
       });
     } else {
+      addLiffLog(`⚠️ No vocabulary detected in image`);
       setError('ไม่พบคำศัพท์ภาษาอังกฤษที่ชัดเจนในภาพ กรุณาถ่ายใหม่อีกครั้งให้ตัวหนังสือชัดเจน');
       setIsProcessingBatch(false);
       return;
     }
 
+    addLiffLog(`✅ Extracted ${drafts.length} words ready for review`);
     setExtractedWords(drafts);
   };
 
@@ -514,6 +542,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
       await executeVisionScan(processed);
     } catch (err: unknown) {
       const errObj = err as Error;
+      addLiffLog(`❌ handleProcessProcessedImage error: ${errObj?.message || String(errObj)}`);
       console.error('Image scan error:', errObj);
       setError(errObj.message || 'ไม่สามารถสกัดคำศัพท์จากภาพได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
@@ -523,8 +552,9 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   };
 
   const handleProcessFile = async (file: File) => {
-    console.log('[AddVocabModal] handleProcessFile called:', file?.name, file?.size, file?.type);
+    addLiffLog(`📂 handleProcessFile called: "${file?.name}" (${((file?.size || 0) / 1024).toFixed(1)} KB, type: "${file?.type}")`);
     if (!file || file.size === 0) {
+      addLiffLog(`❌ File is invalid or 0 byte`);
       setError('ไฟล์ภาพไม่ถูกต้องหรือมีขนาด 0 byte กรุณาลองใหม่อีกครั้ง');
       return;
     }
@@ -545,13 +575,18 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     try {
       // 1. Resize and compress image client-side to prevent memory crashes & payload size issues
       setBatchStepMessage('กำลังบีบอัดรูปภาพให้เหมาะสมกับ AI...');
+      addLiffLog(`⏳ Starting processAndCompressImage...`);
       const processed = await processAndCompressImage(file, 1600, 0.85);
+      addLiffLog(`✅ Compressed image ready. Base64 len: ${(processed.base64.length / 1024).toFixed(1)} KB`);
       setImagePreview(processed.base64);
 
       // 2. Extract vocabulary words & sheet title using Multimodal Vision AI
+      addLiffLog(`⏳ Calling executeVisionScan...`);
       await executeVisionScan(processed);
+      addLiffLog(`🎉 executeVisionScan finished!`);
     } catch (err: unknown) {
       const errObj = err as Error;
+      addLiffLog(`❌ Image scan error: ${errObj?.message || String(errObj)}`);
       console.error('[AddVocabModal] Image scan error:', errObj);
       setError(errObj.message || 'ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
@@ -1434,35 +1469,35 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                             }}
                           />
 
-                          {/* 2. Upload Image (Gallery / Files) */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (galleryInputRef.current) {
-                                galleryInputRef.current.value = '';
-                                galleryInputRef.current.click();
-                              }
-                            }}
-                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none"
-                          >
+                          {/* 2. Upload Image (Gallery / Files) - Direct native input overlay guarantees genuine touch event in mobile WebViews */}
+                          <div className="relative overflow-hidden flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none text-center">
                             <ImageIcon className="w-4 h-4 flex-shrink-0" />
                             <span>เลือกรูปจากเครื่อง</span>
-                          </button>
-
-                          <input
-                            id="gallery-upload-input"
-                            ref={galleryInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              console.log('[AddVocabModal] gallery input onChange fired! files count:', e.target.files?.length);
-                              const files = e.target.files;
-                              if (files && files.length > 0 && files[0]) {
-                                handleProcessFile(files[0]);
-                              }
-                            }}
-                          />
+                            <input
+                              id="gallery-upload-input"
+                              ref={galleryInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onClick={() => {
+                                addLiffLog('📱 galleryInput touched (native picker opening)');
+                                if (galleryInputRef.current) {
+                                  galleryInputRef.current.value = '';
+                                }
+                              }}
+                              onChange={(e) => {
+                                const files = e.target.files;
+                                addLiffLog(`📥 galleryInput onChange fired: ${files?.length ?? 0} file(s)`);
+                                if (files && files.length > 0 && files[0]) {
+                                  const f = files[0];
+                                  addLiffLog(`📄 Picked: "${f.name}", ${((f.size || 0) / 1024).toFixed(1)} KB, type: "${f.type}"`);
+                                  handleProcessFile(f);
+                                } else {
+                                  addLiffLog('⚠️ onChange fired but 0 files found');
+                                }
+                              }}
+                            />
+                          </div>
                         </div>
 
                         {/* LINE In-App Browser Helper: Open in External Browser if device restricts WebView uploads */}
@@ -1484,6 +1519,52 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                         <p className="text-[11px] text-text-muted pt-1">
                           รองรับการถ่ายรูปในแอป, เลือกรูปจากคลังภาพ, หรือลากไฟล์มาวาง (JPG, PNG, WebP)
                         </p>
+
+                        {/* LIFF Live Diagnostics Debug Box */}
+                        <div className="mt-4 p-3 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono shadow-md border border-slate-700 text-left">
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                              <span className="font-bold text-slate-200 text-xs">LIFF Live Debugger</span>
+                              <span className="text-[10px] text-slate-400">({debugLogs.length})</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  try {
+                                    navigator.clipboard.writeText(debugLogs.join('\n'));
+                                    setCopiedLogs(true);
+                                    setTimeout(() => setCopiedLogs(false), 2000);
+                                  } catch (err) {
+                                    addLiffLog(`Clipboard copy error: ${err}`);
+                                  }
+                                }}
+                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded text-[11px] font-bold border border-slate-600 active:scale-95 transition-all"
+                              >
+                                {copiedLogs ? '✓ คัดลอกแล้ว!' : '📋 คัดลอก Logs'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => clearLiffLogs()}
+                                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded text-[11px] border border-slate-600 active:scale-95 transition-all"
+                              >
+                                ล้าง
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-2 max-h-40 overflow-y-auto space-y-1 text-[10px] text-slate-300 select-all font-mono leading-relaxed">
+                            {debugLogs.length === 0 ? (
+                              <p className="text-slate-500 italic">ยังไม่มี logs บันทึก...</p>
+                            ) : (
+                              debugLogs.map((log, i) => (
+                                <div key={i} className="border-b border-slate-800/40 pb-0.5 break-all">
+                                  {log}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
