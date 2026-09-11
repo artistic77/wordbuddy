@@ -179,6 +179,58 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     });
   }, []);
 
+  // Fallback file detector: Android WebView often populates input.files without dispatching DOM 'change'
+  const handleProcessFileRef = useRef<(file: File) => Promise<void>>(async () => {});
+  const isCheckingFilesRef = useRef(false);
+
+  const checkInputFiles = useCallback((source: string) => {
+    const input = galleryInputRef.current;
+    if (!input) return;
+    const files = input.files;
+    const count = files?.length ?? 0;
+    addLiffLog(`🔍 Check (${source}): input.files count = ${count}`);
+    if (files && count > 0 && !isCheckingFilesRef.current) {
+      const f = files[0];
+      isCheckingFilesRef.current = true;
+      addLiffLog(`🎯 Detected file via ${source}: "${f.name}" (${((f.size || 0) / 1024).toFixed(1)} KB)`);
+      handleProcessFileRef.current(f).finally(() => {
+        isCheckingFilesRef.current = false;
+        try {
+          if (galleryInputRef.current) galleryInputRef.current.value = '';
+        } catch {}
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const runChecks = (reason: string) => {
+      checkInputFiles(`${reason}-0ms`);
+      setTimeout(() => checkInputFiles(`${reason}-150ms`), 150);
+      setTimeout(() => checkInputFiles(`${reason}-400ms`), 400);
+      setTimeout(() => checkInputFiles(`${reason}-800ms`), 800);
+      setTimeout(() => checkInputFiles(`${reason}-1500ms`), 1500);
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        addLiffLog('👁️ App visible: Running delayed file checks...');
+        runChecks('vis');
+      }
+    };
+
+    const handleFocus = () => {
+      addLiffLog('🪟 Window focus: Running delayed file checks...');
+      runChecks('focus');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [checkInputFiles]);
+
   useEffect(() => {
     const input = galleryInputRef.current;
     if (!input) return;
@@ -592,8 +644,16 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     } finally {
       setIsProcessingBatch(false);
       setBatchStepMessage(null);
+      if (galleryInputRef.current) {
+        try {
+          galleryInputRef.current.value = '';
+        } catch {
+          // ignore
+        }
+      }
     }
   };
+  handleProcessFileRef.current = handleProcessFile;
 
   const handleToggleSelectWord = (id: string) => {
     setExtractedWords((prev) =>
@@ -1477,13 +1537,11 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                               id="gallery-upload-input"
                               ref={galleryInputRef}
                               type="file"
-                              accept="image/*"
+                              accept="image/*,image/jpeg,image/jpg,image/png,image/webp"
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                               onClick={() => {
                                 addLiffLog('📱 galleryInput touched (native picker opening)');
-                                if (galleryInputRef.current) {
-                                  galleryInputRef.current.value = '';
-                                }
+                                // Do NOT clear value here, let Android file chooser intent fire uninhibited
                               }}
                               onChange={(e) => {
                                 const files = e.target.files;
@@ -1494,6 +1552,30 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                                   handleProcessFile(f);
                                 } else {
                                   addLiffLog('⚠️ onChange fired but 0 files found');
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Secondary Alternative for Android devices where PhotoPicker suppresses files */}
+                        <div className="flex justify-center pt-1">
+                          <div className="relative overflow-hidden inline-flex items-center justify-center gap-1.5 text-xs text-primary/80 hover:text-primary font-medium underline cursor-pointer py-1">
+                            <span>📂 หรือแตะที่นี่เพื่อเลือกผ่านตัวจัดการไฟล์ทั่วไป (*/*)</span>
+                            <input
+                              type="file"
+                              accept="*/*"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              onClick={() => {
+                                addLiffLog('📱 wildcardInput (*/*) touched');
+                              }}
+                              onChange={(e) => {
+                                const files = e.target.files;
+                                addLiffLog(`📥 wildcardInput onChange: ${files?.length ?? 0} file(s)`);
+                                if (files && files.length > 0 && files[0]) {
+                                  const f = files[0];
+                                  addLiffLog(`📄 Wildcard Picked: "${f.name}", ${((f.size || 0) / 1024).toFixed(1)} KB`);
+                                  handleProcessFile(f);
                                 }
                               }}
                             />
