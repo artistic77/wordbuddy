@@ -16,6 +16,7 @@ import {
   Wand2,
   AlertTriangle,
   ExternalLink,
+  RotateCw,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -29,7 +30,7 @@ import {
 } from '../../services/aiService';
 import { speakWord } from '../../services/ttsService';
 import { getThaiPhonetic } from '../../services/phoneticService';
-import { processAndCompressImage } from '../../utils/imageUtils';
+import { processAndCompressImage, processCanvasSnapshot, type ProcessedImage } from '../../utils/imageUtils';
 import { liffService } from '../../services/liffService';
 import type { PartOfSpeech, TranslationResponse } from '../../types';
 
@@ -126,6 +127,38 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
+  // In-App WebRTC Camera state (prevents Android WebView process kill)
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState<'environment' | 'user'>('environment');
+  const [isStartingCamera, setIsStartingCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
+  const stopCamera = useCallback(() => {
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+      cameraStreamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+    setIsStartingCamera(false);
+  }, []);
+
+  // Cleanup camera stream when modal is closed or unmounted
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera();
+    }
+  }, [isOpen, stopCamera]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
   // Common UI state
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -134,6 +167,81 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   // Track whether we returned from a camera capture where the WebView was killed
   const [showCameraRetryHint, setShowCameraRetryHint] = useState(false);
+
+  const startInAppCamera = async (facing: 'environment' | 'user' = 'environment') => {
+    setError(null);
+    setShowCameraRetryHint(false);
+
+    // If WebRTC is not supported or not secure context, fallback to native file input
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.warn('[In-App Camera] getUserMedia not supported, falling back to native file input.');
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    stopCamera();
+    setIsStartingCamera(true);
+    setIsCameraActive(true);
+    setCameraFacingMode(facing);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facing },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      });
+
+      cameraStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err: any) {
+      console.warn('[In-App Camera] Camera access failed:', err);
+      stopCamera();
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        setError('กรุณาอนุญาตสิทธิ์เข้าถึงกล้องใน LINE หรือเลือกรูปภาพจากคลังภาพแทน');
+      } else {
+        // Fallback to native camera input
+        cameraInputRef.current?.click();
+      }
+    } finally {
+      setIsStartingCamera(false);
+    }
+  };
+
+  const handleFlipCamera = () => {
+    const nextFacing = cameraFacingMode === 'environment' ? 'user' : 'environment';
+    startInAppCamera(nextFacing);
+  };
+
+  const handleCaptureSnapshot = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Stop camera stream immediately
+      stopCamera();
+
+      // Compress snapshot directly from canvas
+      const processed = processCanvasSnapshot(canvas, 1600, 0.85);
+      handleProcessProcessedImage(processed);
+    } catch (err: any) {
+      console.error('Failed to capture snapshot from canvas:', err);
+      setError('ไม่สามารถถ่ายภาพได้ กรุณาลองใหม่อีกครั้ง');
+    }
+  };
 
   // ---------------------------------------------------------------------------
   // LINE WebView Camera Lifecycle Recovery
@@ -335,6 +443,85 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   // --------------------------------------------------------------------------
   // Tab 3: Photo / Worksheet Scan (Camera + Gallery Upload)
   // --------------------------------------------------------------------------
+  const executeVisionScan = async (processed: ProcessedImage) => {
+    setBatchStepMessage('กำลังสแกนใบงานด้วย Multimodal AI Vision...');
+
+    // Extract vocabulary words & sheet title using Multimodal Vision AI
+    const sheetResult = await extractVocabSheetFromImage(processed.base64, processed.mimeType);
+
+    if (sheetResult.title) {
+      setDetectedSheetTitle(sheetResult.title);
+    }
+
+    let drafts: VocabEntryDraft[] = [];
+
+    // Check if 1-shot full translations are returned directly by AI Vision
+    if (sheetResult.entries && sheetResult.entries.length > 0) {
+      drafts = sheetResult.entries.map((t, idx) => {
+        const isDup = existingSet.has(t.word_en.trim().toLowerCase());
+        return {
+          id: `draft-${idx}-${Date.now()}`,
+          word_en: t.word_en,
+          word_th: t.word_th,
+          reading_th: t.reading_th || getThaiPhonetic(t.word_en),
+          part_of_speech: t.part_of_speech || 'noun',
+          example_sentence_en: t.example_sentence_en || '',
+          example_sentence_th: t.example_sentence_th || '',
+          selected: !isDup,
+          isExpanded: false,
+          isDuplicate: isDup,
+        };
+      });
+    } else if (sheetResult.words && sheetResult.words.length > 0) {
+      setBatchStepMessage(`AI พบ ${sheetResult.words.length} คำศัพท์! กำลังแปลความหมายและคำอ่านไทย...`);
+
+      // Batch translate all extracted words
+      const translations: TranslationResponse[] = await batchTranslateWords(sheetResult.words);
+
+      // Populate batch draft list with duplicate check
+      drafts = translations.map((t, idx) => {
+        const isDup = existingSet.has(t.word_en.trim().toLowerCase());
+        return {
+          id: `draft-${idx}-${Date.now()}`,
+          word_en: t.word_en,
+          word_th: t.word_th,
+          reading_th: t.reading_th || getThaiPhonetic(t.word_en),
+          part_of_speech: t.part_of_speech || 'noun',
+          example_sentence_en: t.example_sentence_en || '',
+          example_sentence_th: t.example_sentence_th || '',
+          selected: !isDup,
+          isExpanded: false,
+          isDuplicate: isDup,
+        };
+      });
+    } else {
+      setError('ไม่พบคำศัพท์ภาษาอังกฤษที่ชัดเจนในภาพ กรุณาถ่ายใหม่อีกครั้งให้ตัวหนังสือชัดเจน');
+      setIsProcessingBatch(false);
+      return;
+    }
+
+    setExtractedWords(drafts);
+  };
+
+  const handleProcessProcessedImage = async (processed: ProcessedImage) => {
+    setActiveTab('photo');
+    setError(null);
+    setDetectedSheetTitle(null);
+    setIsProcessingBatch(true);
+    setImagePreview(processed.base64);
+
+    try {
+      await executeVisionScan(processed);
+    } catch (err: unknown) {
+      const errObj = err as Error;
+      console.error('Image scan error:', errObj);
+      setError(errObj.message || 'ไม่สามารถสกัดคำศัพท์จากภาพได้ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setIsProcessingBatch(false);
+      setBatchStepMessage(null);
+    }
+  };
+
   const handleProcessFile = async (file: File) => {
     if (!file || file.size === 0) {
       setError('ไฟล์ภาพไม่ถูกต้องหรือมีขนาด 0 byte กรุณาลองใหม่อีกครั้ง');
@@ -352,74 +539,28 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     setError(null);
     setDetectedSheetTitle(null);
     setIsProcessingBatch(true);
-    setBatchStepMessage('Optimizing & compressing image for fast AI processing...');
+    setBatchStepMessage('กำลังเตรียมรูปภาพและอ่านข้อมูล...');
+
+    // Create an instant lightweight preview using URL.createObjectURL
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    } catch {
+      // ignore
+    }
 
     try {
       // 1. Resize and compress image client-side to prevent memory crashes & payload size issues
+      setBatchStepMessage('กำลังบีบอัดรูปภาพให้เหมาะสมกับ AI...');
       const processed = await processAndCompressImage(file, 1600, 0.85);
       setImagePreview(processed.base64);
 
-      setBatchStepMessage('Scanning worksheet with Multimodal AI Vision...');
-
       // 2. Extract vocabulary words & sheet title using Multimodal Vision AI
-      const sheetResult = await extractVocabSheetFromImage(processed.base64, processed.mimeType);
-
-      if (sheetResult.title) {
-        setDetectedSheetTitle(sheetResult.title);
-      }
-
-      let drafts: VocabEntryDraft[] = [];
-
-      // Check if 1-shot full translations are returned directly by AI Vision
-      if (sheetResult.entries && sheetResult.entries.length > 0) {
-        drafts = sheetResult.entries.map((t, idx) => {
-          const isDup = existingSet.has(t.word_en.trim().toLowerCase());
-          return {
-            id: `draft-${idx}-${Date.now()}`,
-            word_en: t.word_en,
-            word_th: t.word_th,
-            reading_th: t.reading_th || getThaiPhonetic(t.word_en),
-            part_of_speech: t.part_of_speech || 'noun',
-            example_sentence_en: t.example_sentence_en || '',
-            example_sentence_th: t.example_sentence_th || '',
-            selected: !isDup,
-            isExpanded: false,
-            isDuplicate: isDup,
-          };
-        });
-      } else if (sheetResult.words && sheetResult.words.length > 0) {
-        setBatchStepMessage(`AI identified ${sheetResult.words.length} words! Generating Thai meanings & pronunciations...`);
-
-        // 3. Batch translate all extracted words
-        const translations: TranslationResponse[] = await batchTranslateWords(sheetResult.words);
-
-        // 4. Populate batch draft list with duplicate check
-        drafts = translations.map((t, idx) => {
-          const isDup = existingSet.has(t.word_en.trim().toLowerCase());
-          return {
-            id: `draft-${idx}-${Date.now()}`,
-            word_en: t.word_en,
-            word_th: t.word_th,
-            reading_th: t.reading_th || getThaiPhonetic(t.word_en),
-            part_of_speech: t.part_of_speech || 'noun',
-            example_sentence_en: t.example_sentence_en || '',
-            example_sentence_th: t.example_sentence_th || '',
-            selected: !isDup,
-            isExpanded: false,
-            isDuplicate: isDup,
-          };
-        });
-      } else {
-        setError('No clear English vocabulary words found in this image. Please try another photo or a clearer angle.');
-        setIsProcessingBatch(false);
-        return;
-      }
-
-      setExtractedWords(drafts);
+      await executeVisionScan(processed);
     } catch (err: unknown) {
       const errObj = err as Error;
       console.error('Image scan error:', errObj);
-      setError(errObj.message || 'Failed to extract words from photo. Please try again.');
+      setError(errObj.message || 'ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsProcessingBatch(false);
       setBatchStepMessage(null);
@@ -1137,14 +1278,69 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               {extractedWords.length === 0 ? (
                 <div className="space-y-4">
-                  {isProcessingBatch && imagePreview ? (
-                    /* Processing State with Preview Overlay */
-                    <div className="relative w-full h-60 rounded-2xl overflow-hidden border-2 border-primary/40 bg-slate-900/10 flex items-center justify-center p-3 shadow-inner">
-                      <img
-                        src={imagePreview}
-                        alt="Worksheet Preview"
-                        className="max-h-56 max-w-full rounded-xl object-contain opacity-60 filter blur-[1px]"
+                  {isCameraActive ? (
+                    /* In-App Camera Viewfinder (WebRTC - Prevents Android WebView Process Kill) */
+                    <div className="relative w-full rounded-2xl overflow-hidden bg-black flex flex-col items-center justify-center shadow-lg border border-primary/30 animate-fade-in">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-80 object-cover"
                       />
+
+                      {/* Viewfinder Framing Guidelines */}
+                      <div className="absolute inset-x-6 inset-y-12 border-2 border-white/60 border-dashed rounded-xl pointer-events-none flex items-center justify-center">
+                        <span className="text-white text-xs font-semibold px-3 py-1 bg-black/50 backdrop-blur-sm rounded-full">
+                          เล็งคำศัพท์หรือใบงานให้อยู่ในกรอบ
+                        </span>
+                      </div>
+
+                      {/* Top Action Controls: Flip & Close */}
+                      <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20">
+                        <button
+                          type="button"
+                          onClick={handleFlipCamera}
+                          className="p-2.5 rounded-full bg-black/60 text-white hover:bg-black/80 backdrop-blur-sm transition-all active:scale-95"
+                          title="สลับกล้องหน้า / กล้องหลัง"
+                        >
+                          <RotateCw className="w-5 h-5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={stopCamera}
+                          className="p-2.5 rounded-full bg-black/60 text-white hover:bg-black/80 backdrop-blur-sm transition-all active:scale-95"
+                          title="ปิดกล้อง"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {/* Bottom Action Controls: Shutter Button */}
+                      <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-4 z-20">
+                        <button
+                          type="button"
+                          onClick={handleCaptureSnapshot}
+                          className="w-16 h-16 rounded-full bg-white border-4 border-primary shadow-2xl hover:scale-105 active:scale-90 transition-all flex items-center justify-center cursor-pointer"
+                          title="กดเพื่อถ่ายภาพ"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                            <Camera className="w-6 h-6 text-white" />
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  ) : isProcessingBatch ? (
+                    /* Processing State with Preview Overlay - Instant Feedback */
+                    <div className="relative w-full h-64 rounded-2xl overflow-hidden border-2 border-primary/40 bg-slate-900/10 flex items-center justify-center p-3 shadow-inner">
+                      {imagePreview && (
+                        <img
+                          src={imagePreview}
+                          alt="Worksheet Preview"
+                          className="max-h-60 max-w-full rounded-xl object-contain opacity-60 filter blur-[1px]"
+                        />
+                      )}
                       <div className="absolute inset-0 bg-white/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 p-6 text-center animate-fade-in">
                         <div className="w-14 h-14 rounded-2xl bg-primary-light flex items-center justify-center text-primary shadow-sm animate-pulse">
                           <Sparkles className="w-7 h-7 animate-spin" />
@@ -1154,7 +1350,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                             AI Vision Processing
                           </p>
                           <p className="text-xs sm:text-sm font-medium text-primary max-w-sm mx-auto">
-                            {batchStepMessage || 'Scanning image and identifying vocabulary...'}
+                            {batchStepMessage || 'กำลังอ่านและค้นหาคำศัพท์จากภาพ...'}
                           </p>
                         </div>
                       </div>
@@ -1189,18 +1385,20 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                             Photo & Worksheet Scanner
                           </h3>
                           <p className="text-xs text-text-secondary mt-1">
-                            Automatically extract multiple English words from textbook pages, worksheets, or flashcards with Thai meanings & pronunciations.
+                            สกัดคำศัพท์ภาษาอังกฤษจากใบงาน แบบฝึกหัด หรือหนังสือเรียน พร้อมคำแปลและคำอ่านไทยด้วย AI
                           </p>
                         </div>
 
-                        {/* Camera Retry Hint — shown when WebView was killed & reloaded by Android during camera capture */}
+                        {/* Camera Retry Hint — shown when external camera caused reload */}
                         {showCameraRetryHint && (
                           <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-2 animate-fade-in">
                             <div className="flex items-start gap-2">
                               <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                               <div>
                                 <p className="font-bold">ภาพที่ถ่ายไม่ถูกส่งเข้ามา</p>
-                                <p className="mt-1">เนื่องจาก LINE App ทำการ reload หน้าระหว่างที่เปิดกล้อง กรุณาลองใหม่โดย<strong>เลือกรูปจากคลังภาพ (Gallery)</strong> แทนการถ่ายรูปโดยตรง หรือเปิดใน Chrome/Safari</p>
+                                <p className="mt-1">
+                                  เนื่องจาก LINE App ทำการ reload หน้าระหว่างเปิดกล้องภายนอก แนะนำให้ใช้ปุ่ม <strong>ถ่ายภาพทันที (In-App Camera)</strong> หรือ <strong>เลือกรูปจากเครื่อง</strong> แทน
+                                </p>
                               </div>
                             </div>
                             <button
@@ -1213,55 +1411,63 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                           </div>
                         )}
 
-                        {/* Dual Action Native Input Buttons (Transparent Native Overlay for LINE WebView / Mobile compatibility) */}
+                        {/* Dual Action Buttons */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                          {/* 1. Take Photo (Camera) */}
-                          <div className="relative flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer select-none overflow-hidden">
-                            <input
-                              id="camera-upload-input"
-                              ref={cameraInputRef}
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                              onClick={() => markCameraPending()}
-                              onChange={(e) => {
-                                clearCameraPending();
-                                const file = e.target.files?.[0];
-                                if (file) handleProcessFile(file);
-                                e.target.value = '';
-                              }}
-                            />
-                            <Camera className="w-4 h-4 flex-shrink-0 pointer-events-none" />
-                            <span className="pointer-events-none">ถ่ายภาพทันที</span>
-                          </div>
+                          {/* 1. Take Photo (In-App WebRTC Camera) */}
+                          <button
+                            type="button"
+                            onClick={() => startInAppCamera('environment')}
+                            disabled={isStartingCamera}
+                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary-hover active:scale-95 transition-all cursor-pointer select-none"
+                          >
+                            <Camera className="w-4 h-4 flex-shrink-0" />
+                            <span>{isStartingCamera ? 'กำลังเปิดกล้อง...' : 'ถ่ายภาพทันที'}</span>
+                          </button>
 
-                          {/* 2. Upload Image (Gallery / Files) */}
-                          <div className="relative flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none overflow-hidden">
+                          {/* Fallback hidden camera input */}
+                          <input
+                            id="camera-upload-input"
+                            ref={cameraInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onClick={() => markCameraPending()}
+                            onChange={(e) => {
+                              clearCameraPending();
+                              const file = e.target.files?.[0];
+                              e.target.value = '';
+                              if (file) handleProcessFile(file);
+                            }}
+                          />
+
+                          {/* 2. Upload Image (Gallery / Files) with standard accessible label */}
+                          <label
+                            htmlFor="gallery-upload-input"
+                            className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none"
+                          >
                             <input
                               id="gallery-upload-input"
                               ref={galleryInputRef}
                               type="file"
-                              accept="image/*"
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                              onClick={() => markCameraPending()}
+                              accept="image/png,image/jpeg,image/jpg,image/webp,image/*"
+                              className="sr-only"
                               onChange={(e) => {
-                                clearCameraPending();
                                 const file = e.target.files?.[0];
-                                if (file) handleProcessFile(file);
                                 e.target.value = '';
+                                if (file) handleProcessFile(file);
                               }}
                             />
                             <ImageIcon className="w-4 h-4 flex-shrink-0 pointer-events-none" />
                             <span className="pointer-events-none">เลือกรูปจากเครื่อง</span>
-                          </div>
+                          </label>
                         </div>
 
                         {/* LINE In-App Browser Helper: Open in External Browser if device restricts WebView uploads */}
                         {liffService.isInClient() && (
                           <div className="mt-3 p-2.5 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-800 text-xs flex flex-col sm:flex-row items-center justify-between gap-2 text-left">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-medium">💡 เล่นผ่าน LINE: หากกดเลือกรูปแล้วเครื่องไม่ตอบสนอง</span>
+                              <span className="font-medium">💡 เล่นผ่าน LINE: ต้องการใช้กล้องหลักของเครื่อง</span>
                             </div>
                             <button
                               type="button"
@@ -1274,7 +1480,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                         )}
 
                         <p className="text-[11px] text-text-muted pt-1">
-                          รองรับการถ่ายรูป, เลือกรูปจากคลังภาพ, แคปหน้าจอ หรือลากไฟล์มาวาง (JPG, PNG, WebP)
+                          รองรับการถ่ายรูปในแอป, เลือกรูปจากคลังภาพ, หรือลากไฟล์มาวาง (JPG, PNG, WebP)
                         </p>
                       </div>
                     </div>
