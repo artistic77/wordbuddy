@@ -523,6 +523,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   };
 
   const handleProcessFile = async (file: File) => {
+    console.log('[AddVocabModal] handleProcessFile called:', file?.name, file?.size, file?.type);
     if (!file || file.size === 0) {
       setError('ไฟล์ภาพไม่ถูกต้องหรือมีขนาด 0 byte กรุณาลองใหม่อีกครั้ง');
       return;
@@ -541,14 +542,6 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     setIsProcessingBatch(true);
     setBatchStepMessage('กำลังเตรียมรูปภาพและอ่านข้อมูล...');
 
-    // Create an instant lightweight preview using URL.createObjectURL
-    try {
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
-    } catch {
-      // ignore
-    }
-
     try {
       // 1. Resize and compress image client-side to prevent memory crashes & payload size issues
       setBatchStepMessage('กำลังบีบอัดรูปภาพให้เหมาะสมกับ AI...');
@@ -559,7 +552,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
       await executeVisionScan(processed);
     } catch (err: unknown) {
       const errObj = err as Error;
-      console.error('Image scan error:', errObj);
+      console.error('[AddVocabModal] Image scan error:', errObj);
       setError(errObj.message || 'ไม่สามารถประมวลผลรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsProcessingBatch(false);
@@ -1441,26 +1434,35 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                             }}
                           />
 
-                          {/* 2. Upload Image (Gallery / Files) with standard accessible label */}
-                          <label
-                            htmlFor="gallery-upload-input"
+                          {/* 2. Upload Image (Gallery / Files) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (galleryInputRef.current) {
+                                galleryInputRef.current.value = '';
+                                galleryInputRef.current.click();
+                              }
+                            }}
                             className="flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl bg-white border-2 border-primary/30 text-primary font-bold text-sm shadow-sm hover:border-primary hover:bg-primary-light/20 active:scale-95 transition-all cursor-pointer select-none"
                           >
-                            <input
-                              id="gallery-upload-input"
-                              ref={galleryInputRef}
-                              type="file"
-                              accept="image/png,image/jpeg,image/jpg,image/webp,image/*"
-                              className="sr-only"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                e.target.value = '';
-                                if (file) handleProcessFile(file);
-                              }}
-                            />
-                            <ImageIcon className="w-4 h-4 flex-shrink-0 pointer-events-none" />
-                            <span className="pointer-events-none">เลือกรูปจากเครื่อง</span>
-                          </label>
+                            <ImageIcon className="w-4 h-4 flex-shrink-0" />
+                            <span>เลือกรูปจากเครื่อง</span>
+                          </button>
+
+                          <input
+                            id="gallery-upload-input"
+                            ref={galleryInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              console.log('[AddVocabModal] gallery input onChange fired! files count:', e.target.files?.length);
+                              const files = e.target.files;
+                              if (files && files.length > 0 && files[0]) {
+                                handleProcessFile(files[0]);
+                              }
+                            }}
+                          />
                         </div>
 
                         {/* LINE In-App Browser Helper: Open in External Browser if device restricts WebView uploads */}

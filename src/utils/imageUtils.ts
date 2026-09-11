@@ -19,131 +19,156 @@ export interface ProcessedImage {
  * - Returns clean base64 data URL
  * - Includes a 15-second timeout to prevent indefinite hangs in WebViews
  */
-export const processAndCompressImage = (
+export const processAndCompressImage = async (
   file: File,
   maxDimension = 1600,
   quality = 0.85
 ): Promise<ProcessedImage> => {
-  return new Promise((resolve, reject) => {
-    if (!file || file.size === 0) {
-      return reject(new Error('ไม่พบข้อมูลไฟล์ภาพ หรือไฟล์มีขนาด 0 byte กรุณาลองใหม่อีกครั้ง'));
-    }
+  if (!file || file.size === 0) {
+    throw new Error('ไม่พบข้อมูลไฟล์ภาพ หรือไฟล์มีขนาด 0 byte กรุณาลองใหม่อีกครั้ง');
+  }
 
-    // Check for HEIC/HEIF
-    const isHeic =
-      file.type === 'image/heic' ||
-      file.type === 'image/heif' ||
-      file.name.toLowerCase().endsWith('.heic') ||
-      file.name.toLowerCase().endsWith('.heif');
+  // Check for HEIC/HEIF
+  const isHeic =
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    file.name.toLowerCase().endsWith('.heic') ||
+    file.name.toLowerCase().endsWith('.heif');
 
-    console.log(
-      `[Image Utils] Processing file: "${file.name}" | Size: ${(file.size / 1024).toFixed(1)} KB | Type: "${file.type}"`
-    );
+  console.log(
+    `[Image Utils] Processing file: "${file.name}" | Size: ${(file.size / 1024).toFixed(1)} KB | Type: "${file.type}"`
+  );
 
-    // Timeout guard: 15 seconds
-    let isSettled = false;
-    let objectUrl: string | null = null;
-
-    const cleanup = () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-        objectUrl = null;
-      }
-      clearTimeout(timeoutId);
-    };
-
-    const timeoutId = setTimeout(() => {
-      if (!isSettled) {
-        isSettled = true;
-        cleanup();
-        reject(new Error('การโหลดรูปภาพใช้เวลานานเกินไป กรุณาลองเลือกรูปภาพใหม่อีกครั้ง'));
-      }
-    }, 15000);
-
+  // Strategy 1: Native createImageBitmap (Fastest, hardware accelerated, supported in Android WebView 50+)
+  if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
     try {
-      objectUrl = URL.createObjectURL(file);
-    } catch {
-      clearTimeout(timeoutId);
-      return reject(new Error('ไม่สามารถสร้าง URL สำหรับอ่านรูปภาพได้'));
-    }
+      console.log('[Image Utils] Decoding image via createImageBitmap...');
+      const bitmap = await createImageBitmap(file);
+      let { width, height } = bitmap;
 
-    const img = new Image();
-
-    img.onerror = (e) => {
-      if (isSettled) return;
-      isSettled = true;
-      cleanup();
-      console.warn('[Image Utils] HTML Image element failed to render objectUrl:', e);
-      if (isHeic) {
-        reject(
-          new Error(
-            'รูปภาพเป็นรูปแบบ HEIC จากกล้องมือถือ ซึ่งเบราว์เซอร์ไม่รองรับ กรุณาเลือกไฟล์ JPG หรือ PNG หรือถ่ายภาพจากในแอปโดยตรง'
-          )
-        );
-      } else {
-        reject(new Error('ไม่สามารถถอดรหัสรูปภาพนี้ได้ กรุณาลองเลือกรูปอื่น'));
+      if (width === 0 || height === 0) {
+        width = 800;
+        height = 600;
       }
-    };
 
-    img.onload = () => {
-      if (isSettled) return;
-      try {
-        let { width, height } = img;
-        if (width === 0 || height === 0) {
-          width = 800;
-          height = 600;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
         }
+      }
 
-        // Calculate scaled dimensions preserving aspect ratio
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          } else {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          throw new Error('Canvas 2D context is not supported on this device');
-        }
-
-        // Fill clean white background (useful for transparent PNGs)
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        bitmap.close(); // release native GPU memory immediately
 
-        // Draw scaled image
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-        console.log(
-          `[Image Utils] Successfully compressed image from ${(file.size / 1024).toFixed(1)} KB to ${width}x${height}px (Base64 length: ${compressedBase64.length})`
-        );
-
-        isSettled = true;
-        cleanup();
-        resolve({
-          base64: compressedBase64,
+        const base64 = canvas.toDataURL('image/jpeg', quality);
+        console.log(`[Image Utils] createImageBitmap success: ${width}x${height}px (Base64 length: ${base64.length})`);
+        return {
+          base64,
           mimeType: 'image/jpeg',
           width,
           height,
-        });
-      } catch (err: any) {
-        if (!isSettled) {
-          isSettled = true;
-          cleanup();
-          reject(new Error(err?.message || 'การย่อขนาดภาพล้มเหลว กรุณาลองใหม่อีกครั้ง'));
-        }
+        };
       }
+    } catch (bitmapErr) {
+      console.warn('[Image Utils] createImageBitmap failed, falling back to FileReader DataURL:', bitmapErr);
+      if (isHeic) {
+        throw new Error(
+          'รูปภาพเป็นรูปแบบ HEIC จากกล้องมือถือ ซึ่งระบบไม่รองรับ กรุณาเลือกไฟล์ JPG หรือ PNG หรือกดถ่ายภาพจากในแอปโดยตรง'
+        );
+      }
+    }
+  }
+
+  // Strategy 2: FileReader Data URL + Image (Universal fallback for all WebViews)
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    const timeoutId = setTimeout(() => {
+      reject(new Error('การโหลดรูปภาพใช้เวลานานเกินไป กรุณาลองเลือกรูปภาพใหม่อีกครั้ง'));
+    }, 15000);
+
+    reader.onerror = (err) => {
+      clearTimeout(timeoutId);
+      console.error('[Image Utils] FileReader failed:', err);
+      reject(new Error('ไม่สามารถอ่านไฟล์ภาพจากเครื่องได้'));
     };
 
-    img.src = objectUrl;
+    reader.onload = () => {
+      clearTimeout(timeoutId);
+      const dataUrl = reader.result as string;
+      if (!dataUrl || dataUrl.length < 50) {
+        return reject(new Error('ข้อมูลไฟล์ภาพไม่สมบูรณ์'));
+      }
+
+      const img = new Image();
+      img.onerror = () => {
+        if (isHeic) {
+          reject(
+            new Error(
+              'รูปภาพเป็นรูปแบบ HEIC จากกล้องมือถือ ซึ่งระบบไม่รองรับ กรุณาเลือกไฟล์ JPG หรือ PNG หรือกดถ่ายภาพจากในแอปโดยตรง'
+            )
+          );
+        } else {
+          reject(new Error('ไม่สามารถถอดรหัสรูปภาพนี้ได้ กรุณาลองเลือกรูปอื่น'));
+        }
+      };
+
+      img.onload = () => {
+        try {
+          let { width, height } = img;
+          if (width === 0 || height === 0) {
+            width = 800;
+            height = 600;
+          }
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const base64 = canvas.toDataURL('image/jpeg', quality);
+          console.log(`[Image Utils] FileReader fallback success: ${width}x${height}px`);
+          resolve({
+            base64,
+            mimeType: 'image/jpeg',
+            width,
+            height,
+          });
+        } catch (err: any) {
+          reject(new Error(err?.message || 'การย่อขนาดภาพล้มเหลว'));
+        }
+      };
+
+      img.src = dataUrl;
+    };
+
+    reader.readAsDataURL(file);
   });
 };
 
