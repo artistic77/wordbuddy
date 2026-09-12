@@ -32,7 +32,7 @@ import { speakWord } from '../../services/ttsService';
 import { getThaiPhonetic } from '../../services/phoneticService';
 import { processAndCompressImage, processCanvasSnapshot, type ProcessedImage } from '../../utils/imageUtils';
 import { liffService } from '../../services/liffService';
-import { addLiffLog, getLiffLogs, subscribeLiffLogs, clearLiffLogs } from '../../utils/liffDebug';
+import { addLiffLog } from '../../utils/liffDebug';
 import type { PartOfSpeech, TranslationResponse } from '../../types';
 
 export interface VocabEntryDraft {
@@ -169,15 +169,6 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   // Track whether we returned from a camera capture where the WebView was killed
   const [showCameraRetryHint, setShowCameraRetryHint] = useState(false);
 
-  // LIFF on-screen debugger state
-  const [debugLogs, setDebugLogs] = useState<string[]>(() => getLiffLogs());
-  const [copiedLogs, setCopiedLogs] = useState(false);
-
-  useEffect(() => {
-    return subscribeLiffLogs((newLogs) => {
-      setDebugLogs([...newLogs]);
-    });
-  }, []);
 
   // Fallback file detector: Android WebView often populates input.files without dispatching DOM 'change'
   const handleProcessFileRef = useRef<(file: File) => Promise<void>>(async () => {});
@@ -1602,51 +1593,6 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                           รองรับการถ่ายรูปในแอป, เลือกรูปจากคลังภาพ, หรือลากไฟล์มาวาง (JPG, PNG, WebP)
                         </p>
 
-                        {/* LIFF Live Diagnostics Debug Box */}
-                        <div className="mt-4 p-3 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono shadow-md border border-slate-700 text-left">
-                          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                              <span className="font-bold text-slate-200 text-xs">LIFF Live Debugger</span>
-                              <span className="text-[10px] text-slate-400">({debugLogs.length})</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  try {
-                                    navigator.clipboard.writeText(debugLogs.join('\n'));
-                                    setCopiedLogs(true);
-                                    setTimeout(() => setCopiedLogs(false), 2000);
-                                  } catch (err) {
-                                    addLiffLog(`Clipboard copy error: ${err}`);
-                                  }
-                                }}
-                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded text-[11px] font-bold border border-slate-600 active:scale-95 transition-all"
-                              >
-                                {copiedLogs ? '✓ คัดลอกแล้ว!' : '📋 คัดลอก Logs'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => clearLiffLogs()}
-                                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded text-[11px] border border-slate-600 active:scale-95 transition-all"
-                              >
-                                ล้าง
-                              </button>
-                            </div>
-                          </div>
-                          <div className="mt-2 max-h-40 overflow-y-auto space-y-1 text-[10px] text-slate-300 select-all font-mono leading-relaxed">
-                            {debugLogs.length === 0 ? (
-                              <p className="text-slate-500 italic">ยังไม่มี logs บันทึก...</p>
-                            ) : (
-                              debugLogs.map((log, i) => (
-                                <div key={i} className="border-b border-slate-800/40 pb-0.5 break-all">
-                                  {log}
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </div>
                       </div>
                     </div>
                   )}
