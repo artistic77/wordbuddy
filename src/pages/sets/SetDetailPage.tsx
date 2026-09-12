@@ -69,9 +69,9 @@ export const SetDetailPage: React.FC = () => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
 
-  const fetchSetData = async () => {
+  const fetchSetData = async (showLoadingSpinner = !set) => {
     if (!id) return;
-    setIsLoading(true);
+    if (showLoadingSpinner) setIsLoading(true);
     try {
       // 1. Fetch set details
       const { data: setData, error: setErr } = await supabase
@@ -122,7 +122,7 @@ export const SetDetailPage: React.FC = () => {
   useEffect(() => {
     fetchSetData();
     setSelectedIds(new Set());
-  }, [id, user]);
+  }, [id, user?.id]);
 
   const handleTogglePrivacy = async () => {
     if (!set || user?.id !== set.owner_id) return;

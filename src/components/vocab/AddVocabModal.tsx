@@ -120,8 +120,51 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
   // Tab 3: Batch Photo/Worksheet OCR state
-  const [extractedWords, setExtractedWords] = useState<VocabEntryDraft[]>([]);
-  const [detectedSheetTitle, setDetectedSheetTitle] = useState<string | null>(null);
+  const [extractedWords, setExtractedWordsState] = useState<VocabEntryDraft[]>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? sessionStorage.getItem('wb_extracted_words') : null;
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [detectedSheetTitle, setDetectedSheetTitleState] = useState<string | null>(() => {
+    try {
+      return typeof window !== 'undefined' ? sessionStorage.getItem('wb_detected_title') : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const setExtractedWords = useCallback((action: VocabEntryDraft[] | ((prev: VocabEntryDraft[]) => VocabEntryDraft[])) => {
+    setExtractedWordsState((prev) => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      try {
+        if (next && next.length > 0) {
+          sessionStorage.setItem('wb_extracted_words', JSON.stringify(next));
+        } else {
+          sessionStorage.removeItem('wb_extracted_words');
+        }
+      } catch (e) {
+        console.warn('Failed to save extracted words to sessionStorage', e);
+      }
+      return next;
+    });
+  }, []);
+
+  const setDetectedSheetTitle = useCallback((titleOrUpdater: string | null | ((prev: string | null) => string | null)) => {
+    setDetectedSheetTitleState((prev) => {
+      const next = typeof titleOrUpdater === 'function' ? titleOrUpdater(prev) : titleOrUpdater;
+      try {
+        if (next) {
+          sessionStorage.setItem('wb_detected_title', next);
+        } else {
+          sessionStorage.removeItem('wb_detected_title');
+        }
+      } catch {}
+      return next;
+    });
+  }, []);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [batchStepMessage, setBatchStepMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -743,6 +786,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
       }
 
       setExtractedWords([]);
+      setDetectedSheetTitle(null);
       setImagePreview(null);
       onClose();
     } catch (err: unknown) {
@@ -1641,6 +1685,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                         type="button"
                         onClick={() => {
                           setExtractedWords([]);
+                          setDetectedSheetTitle(null);
                           setImagePreview(null);
                         }}
                         className="text-xs font-semibold text-secondary hover:underline ml-2"
@@ -1822,6 +1867,7 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                       size="md"
                       onClick={() => {
                         setExtractedWords([]);
+                        setDetectedSheetTitle(null);
                         setImagePreview(null);
                       }}
                     >
