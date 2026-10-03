@@ -13,5 +13,13 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    proxy: {
+      '/api/ai-gateway': {
+        target: 'https://ai-api-dev.dentsu.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/ai-gateway/, ''),
+      },
+    },
   },
 });

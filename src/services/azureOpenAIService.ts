@@ -6,35 +6,56 @@
 import type { TranslationResponse, PartOfSpeech } from '../types';
 import { COMMON_PHONETICS, getThaiPhonetic } from './phoneticService';
 
-const DEFAULT_AZURE_OPENAI_ENDPOINT = 'https://artistic77-1198-resource.services.ai.azure.com';
-const DEFAULT_AZURE_OPENAI_KEY_B64 = 'VGpJamZmcElPRG5xSEp5ZkV1QlBvQVdIYUdQZk44ZlZoV2lZV2JZamxCNXhIZ1F1QTlaWkpRUUo5OUNIQUNNc2ZyRlhKM3czQUFBQUFDT0dFWHBH';
+const DEFAULT_GATEWAY_ENDPOINT = 'https://ai-api-dev.dentsu.com';
+const DEFAULT_GATEWAY_KEY = '0e8efaddb74d411a929cb41a3d08b36d';
+const DEFAULT_GATEWAY_DEPLOYMENT = 'gpt-5.5';
+const DEFAULT_GATEWAY_API_VERSION = '2024-10-21';
+const DEFAULT_SERVICE_LINE = 'cxm';
+const DEFAULT_BRAND = 'merkle';
+const DEFAULT_PROJECT = 'ChatBotEnglishTeacher';
+const DEFAULT_HEADER_API_VERSION = 'v15';
 
 export const getAzureOpenAIKey = (): string => {
-  const envKey = import.meta.env.VITE_AZURE_OPENAI_KEY;
-  if (envKey && envKey !== 'undefined' && envKey !== 'null' && envKey.trim().length > 10) {
+  const envKey = import.meta.env.VITE_AI_GATEWAY_KEY || import.meta.env.VITE_AZURE_OPENAI_KEY;
+  if (envKey && envKey !== 'undefined' && envKey !== 'null' && envKey.trim().length > 5) {
     return envKey.trim();
   }
-  try {
-    return atob(DEFAULT_AZURE_OPENAI_KEY_B64);
-  } catch {
-    return '';
-  }
+  return DEFAULT_GATEWAY_KEY;
 };
 
 export const getAzureOpenAIEndpoint = (): string => {
-  const envEndpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT;
+  const envEndpoint = import.meta.env.VITE_AI_GATEWAY_ENDPOINT || import.meta.env.VITE_AZURE_OPENAI_ENDPOINT;
   if (envEndpoint && envEndpoint !== 'undefined' && envEndpoint.startsWith('http')) {
     return envEndpoint.trim();
   }
-  return DEFAULT_AZURE_OPENAI_ENDPOINT;
+  return DEFAULT_GATEWAY_ENDPOINT;
+};
+
+export const getAzureOpenAIDeployment = (): string => {
+  return (
+    import.meta.env.VITE_AI_GATEWAY_DEPLOYMENT ||
+    import.meta.env.VITE_AZURE_OPENAI_DEPLOYMENT ||
+    DEFAULT_GATEWAY_DEPLOYMENT
+  );
+};
+
+export const getAzureOpenAIApiVersion = (): string => {
+  return (
+    import.meta.env.VITE_AI_GATEWAY_API_VERSION ||
+    import.meta.env.VITE_AZURE_OPENAI_API_VERSION ||
+    DEFAULT_GATEWAY_API_VERSION
+  );
 };
 
 export const isAzureOpenAIConfigured = (): boolean => {
   return Boolean(getAzureOpenAIKey() && getAzureOpenAIEndpoint());
 };
 
-const getAzureOpenAIUrl = (): string => {
+export const getDirectOpenAIUrl = (): string => {
   const rawEndpoint = getAzureOpenAIEndpoint();
+  const deployment = getAzureOpenAIDeployment();
+  const apiVersion = getAzureOpenAIApiVersion();
+
   let baseHost = rawEndpoint;
   try {
     const u = new URL(rawEndpoint);
@@ -43,14 +64,86 @@ const getAzureOpenAIUrl = (): string => {
     baseHost = rawEndpoint.replace(/\/+$/, '');
   }
 
-  const deployment = import.meta.env.VITE_AZURE_OPENAI_DEPLOYMENT || 'gpt-4.1-mini';
-  // Use supported chat completions preview version
-  const apiVersion =
-    import.meta.env.VITE_AZURE_OPENAI_API_VERSION && import.meta.env.VITE_AZURE_OPENAI_API_VERSION !== '2025-04-14'
-      ? import.meta.env.VITE_AZURE_OPENAI_API_VERSION
-      : '2024-08-01-preview';
-
   return `${baseHost}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+};
+
+export const getAzureOpenAIUrl = (): string => {
+  const isBrowser = typeof window !== 'undefined';
+  const rawEndpoint = getAzureOpenAIEndpoint();
+  const deployment = getAzureOpenAIDeployment();
+  const apiVersion = getAzureOpenAIApiVersion();
+
+  // If in browser and targeting external host without permissive CORS (e.g. dentsu.com), route through /api/ai-gateway
+  if (isBrowser && rawEndpoint.includes('dentsu.com')) {
+    return `/api/ai-gateway/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+  }
+
+  return getDirectOpenAIUrl();
+};
+
+export const getAIRequestHeaders = (): Record<string, string> => {
+  const key = getAzureOpenAIKey();
+  const serviceLine = import.meta.env.VITE_AI_GATEWAY_SERVICE_LINE || DEFAULT_SERVICE_LINE;
+  const brand = import.meta.env.VITE_AI_GATEWAY_BRAND || DEFAULT_BRAND;
+  const project = import.meta.env.VITE_AI_GATEWAY_PROJECT || DEFAULT_PROJECT;
+  const headerApiVersion = import.meta.env.VITE_AI_GATEWAY_HEADER_API_VERSION || DEFAULT_HEADER_API_VERSION;
+
+  return {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Ocp-Apim-Subscription-Key': key,
+    'api-key': key,
+    'x-service-line': serviceLine,
+    'x-brand': brand,
+    'x-project': project,
+    'api-version': headerApiVersion,
+  };
+};
+
+export const callOpenAIApi = async (body: any): Promise<any> => {
+  const key = getAzureOpenAIKey();
+  if (!key) {
+    throw new Error('OpenAI / AI Gateway key is not configured');
+  }
+
+  const headers = getAIRequestHeaders();
+  const primaryUrl = getAzureOpenAIUrl();
+  const directUrl = getDirectOpenAIUrl();
+
+  const urlsToTry = [primaryUrl];
+  if (primaryUrl !== directUrl) {
+    urlsToTry.push(directUrl);
+  }
+
+  let lastError: any = null;
+
+  for (const url of urlsToTry) {
+    try {
+      console.log(`[AI Gateway] Requesting ${getAzureOpenAIDeployment()} -> ${url}`);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        lastError = new Error(`AI Gateway Error (${res.status}): ${errText}`);
+        console.warn(`[AI Gateway] Call to ${url} failed (${res.status}): ${errText}`);
+        if (urlsToTry.length > 1 && (res.status === 404 || res.status === 502)) {
+          continue;
+        }
+        throw lastError;
+      }
+
+      return await res.json();
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[AI Gateway] Attempt failed on ${url}:`, err);
+    }
+  }
+
+  throw lastError || new Error('Failed to connect to AI Gateway');
 };
 
 /**
@@ -128,31 +221,18 @@ Respond ONLY with valid JSON matching this schema:
   "example_sentence_th": "string"
 }`;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'api-key': key,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `English word: "${cleanWord}"` },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.1,
-    }),
+  const data = await callOpenAIApi({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `English word: "${cleanWord}"` },
+    ],
+    response_format: { type: 'json_object' },
+    max_completion_tokens: 1000,
   });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Azure OpenAI Error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) {
-    throw new Error('Empty response received from Azure OpenAI');
+    throw new Error('Empty response received from OpenAI / AI Gateway');
   }
 
   const parsed = JSON.parse(content);
@@ -180,7 +260,6 @@ export const batchGenerateVocabWithAzureOpenAI = async (words: string[]): Promis
   if (!key || words.length === 0) return [];
 
   const uniqueWords = Array.from(new Set(words.map((w) => w.trim()))).filter(Boolean);
-  const url = getAzureOpenAIUrl();
 
   const systemPrompt = `You are a world-class English-Thai educational linguist, dictionary editor, and phonetic specialist for Thai schools.
 
@@ -249,26 +328,17 @@ Respond ONLY with valid JSON:
 }`;
 
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'api-key': key,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: JSON.stringify({ words: uniqueWords }) },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.1,
-      }),
+    const data = await callOpenAIApi({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: JSON.stringify({ words: uniqueWords }) },
+      ],
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 2500,
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      const content = data.choices?.[0]?.message?.content;
-      if (content) {
+    const content = data.choices?.[0]?.message?.content;
+    if (content) {
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed.items) && parsed.items.length > 0) {
           return parsed.items.map((item: any) => {
@@ -289,7 +359,6 @@ Respond ONLY with valid JSON:
           });
         }
       }
-    }
   } catch (err) {
     console.warn('Azure OpenAI batch generation failed, falling back to concurrent requests:', err);
   }
@@ -326,18 +395,20 @@ export const extractVocabListWithAzureVision = async (
     imageUrl = `data:${mimeType};base64,${base64Image}`;
   }
 
-  const systemPrompt = `You are a world-class educational AI vision and linguist assistant specializing in English-Thai vocabulary learning.
+  const systemPrompt = `You are a world-class educational AI vision and linguist assistant specializing in English-Thai vocabulary learning for Thai schools.
 
 Your task:
 1. Carefully inspect the image (it could be a worksheet, textbook page, spelling list, flashcard, handwritten notes, bilingual table, or photos of objects/scenes).
 2. Extract all English vocabulary words/phrases found in or represented by the image in correct sequential reading order.
 3. For EVERY extracted word, generate complete educational details:
    - "word_en": The English word (clean, standard casing, e.g. "quadrilateral", "dinosaur", "reading").
-   - "word_th": Accurate Thai MEANING/TRANSLATION (ความหมายภาษาไทย เช่น "method" -> "วิธีการ / วิธี", "resilience" -> "ความยืดหยุ่น").
-   - "reading_th": Standard Thai PHONETIC PRONUNCIATION (คำอ่านออกเสียง เช่น "method" -> "เมธอด", "resilience" -> "เรซิลิเอนซ์").
+   - "word_th": Accurate, natural Thai MEANING / TRANSLATION (ความหมาย/คำแปลภาษาไทย เช่น "knife" -> "มีด", "resilience" -> "ความยืดหยุ่น", "chicken" -> "ไก่ / เนื้อไก่").
+     CRITICAL: "word_th" MUST be in the Thai script (ภาษาไทย) ONLY. NEVER output English definitions or English words in "word_th".
+   - "reading_th": Standard Thai PHONETIC PRONUNCIATION guide (คำอ่านออกเสียงของคำภาษาอังกฤษเป็นอักษรไทย เช่น "method" -> "เมธอด", "resilience" -> "เรซิลิเอนซ์", "chicken" -> "ชิกเก้น").
+     CRITICAL: NEVER put the Thai meaning in "reading_th". Follow natural spoken English phonetics (e.g. final -st -> "สต์", -ch/-tch -> "ทช์"/"ช์", -en -> "เก้น"/"เซ่น", r-controlled /ɜːr/ -> "เ...ิ...ร์...").
    - "part_of_speech": One of ["noun", "verb", "adj", "adv", "gerund", "past_participle", "other"].
-   - "example_sentence_en": Simple example sentence.
-   - "example_sentence_th": Thai translation of example sentence.
+   - "example_sentence_en": Clear simple educational example sentence.
+   - "example_sentence_th": Natural Thai translation of the example sentence.
 4. Detect any worksheet title or topic if visible (e.g. "Spelling Unit 3", "Science Vocabulary").
 
 Respond ONLY with valid JSON matching this schema:
@@ -346,8 +417,8 @@ Respond ONLY with valid JSON matching this schema:
   "words": [
     {
       "word_en": "word",
-      "word_th": "ความหมาย",
-      "reading_th": "คำอ่าน",
+      "word_th": "ความหมายภาษาไทย",
+      "reading_th": "คำอ่านภาษาไทย",
       "part_of_speech": "noun",
       "example_sentence_en": "...",
       "example_sentence_th": "..."
@@ -355,47 +426,33 @@ Respond ONLY with valid JSON matching this schema:
   ]
 }`;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'api-key': key,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Please carefully analyze this image, extract all vocabulary words/items, and provide Thai meanings and phonetic readings in JSON format.',
+  const data = await callOpenAIApi({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'Please carefully analyze this image, extract all English vocabulary words/items, and provide accurate Thai meanings (in Thai script) and standard Thai phonetic readings in JSON format.',
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageUrl,
+              detail: 'high',
             },
-            {
-              type: 'image_url',
-              image_url: {
-                url: imageUrl,
-                detail: 'high',
-              },
-            },
-          ],
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.1,
-      max_tokens: 3000,
-    }),
+          },
+        ],
+      },
+    ],
+    response_format: { type: 'json_object' },
+    max_completion_tokens: 3000,
   });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Azure OpenAI Vision Error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) {
-    throw new Error('Empty response received from Azure OpenAI Vision');
+    throw new Error('Empty response received from Vision API');
   }
 
   const parsed = JSON.parse(content);
@@ -425,15 +482,29 @@ Respond ONLY with valid JSON matching this schema:
       const en = String(item.word_en || item.word || item.english || '').trim();
       if (en && !en.match(/^\d+$/)) {
         words.push(en);
-        const th = String(item.word_th || item.meaning || item.thai || `คำแปล: ${en}`).trim();
-        const reading = String(item.reading_th || item.pronunciation || getThaiPhonetic(en)).trim();
+        const wordLower = en.toLowerCase();
+        const rawMeaning = String(item.word_th || item.meaning || item.thai || '').trim();
+        const rawReading = String(item.reading_th || item.pronunciation || '').trim();
+
+        // Ensure reading uses authoritative dictionary or verified phonetic rules
+        const validReading =
+          COMMON_PHONETICS[wordLower] ||
+          (rawReading && /[\u0E00-\u0E7F]/.test(rawReading) && rawReading !== rawMeaning
+            ? rawReading
+            : getThaiPhonetic(en));
+
+        // Ensure meaning is genuinely in Thai; if missing, flag with clean fallback
+        const hasThaiMeaning = /[\u0E00-\u0E7F]/.test(rawMeaning) && rawMeaning.toLowerCase() !== wordLower;
+        const validMeaning = hasThaiMeaning ? rawMeaning : `คำแปล: ${en}`;
+
         const pos = (item.part_of_speech || 'noun') as PartOfSpeech;
         const exEn = String(item.example_sentence_en || item.example_en || `Example using ${en}`).trim();
         const exTh = String(item.example_sentence_th || item.example_th || '').trim();
+
         entries.push({
           word_en: en,
-          word_th: th,
-          reading_th: reading,
+          word_th: validMeaning,
+          reading_th: validReading,
           part_of_speech: pos,
           example_sentence_en: exEn,
           example_sentence_th: exTh,
@@ -472,7 +543,6 @@ export const generateVocabFromPromptWithAzureOpenAI = async (
 
   // Strictly clamp requested count between 1 and 50
   const targetCount = Math.min(Math.max(Number(count) || 10, 1), 50);
-  const url = getAzureOpenAIUrl();
 
   const existingWordList = existingWords
     .map((w) => w.trim().toLowerCase())
@@ -518,34 +588,21 @@ Respond ONLY with valid JSON matching this schema:
 
   console.log(`[Azure OpenAI] Generating ${targetCount} vocabs for prompt: "${cleanPrompt}"`);
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'api-key': key,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: `Topic/Prompt: "${cleanPrompt}". Please generate ${targetCount} distinct English vocabulary items.`,
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.3,
-    }),
+  const data = await callOpenAIApi({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: `Topic/Prompt: "${cleanPrompt}". Please generate ${targetCount} distinct English vocabulary items.`,
+      },
+    ],
+    response_format: { type: 'json_object' },
+    max_completion_tokens: 2500,
   });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Azure OpenAI Error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) {
-    throw new Error('Empty response received from Azure OpenAI');
+    throw new Error('Empty response received from AI Gateway');
   }
 
   const parsed = JSON.parse(content);

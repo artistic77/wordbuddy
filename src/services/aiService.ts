@@ -285,6 +285,31 @@ export const extractVocabSheetFromImage = async (
       console.log('[AI Service] Calling Azure OpenAI Vision for worksheet image analysis...');
       const sheetResult = await extractVocabListWithAzureVision(base64Image, mimeType);
       if (sheetResult.words && sheetResult.words.length > 0) {
+        // Guarantee every entry has an authentic Thai translation & phonetic reading
+        if (sheetResult.entries && sheetResult.entries.length > 0) {
+          const hasMissingThai = sheetResult.entries.some(
+            (e) => !/[\u0E00-\u0E7F]/.test(e.word_th) || e.word_th.startsWith('คำแปล:')
+          );
+          if (hasMissingThai) {
+            console.log('[AI Service] Some vision items missing Thai translation, re-translating batch...');
+            try {
+              const enriched = await batchTranslateWords(sheetResult.words);
+              if (enriched && enriched.length > 0) {
+                sheetResult.entries = enriched;
+              }
+            } catch (transErr) {
+              console.warn('[AI Service] Batch translation fallback error:', transErr);
+            }
+          }
+        } else {
+          // If vision only extracted word list, automatically batch translate them
+          try {
+            sheetResult.entries = await batchTranslateWords(sheetResult.words);
+          } catch (transErr) {
+            console.warn('[AI Service] Batch translation for vision words failed:', transErr);
+          }
+        }
+
         console.log(`[AI Service] Azure OpenAI Vision successfully extracted ${sheetResult.words.length} words:`, sheetResult);
         return sheetResult;
       }
