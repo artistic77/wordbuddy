@@ -10,21 +10,21 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading = false, children, disabled, ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100';
+      'inline-flex items-center justify-center font-medium transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100 disabled:pointer-events-none select-none';
 
     const variants = {
-      primary: 'bg-primary text-white hover:bg-primary-hover shadow-primary-btn',
-      secondary: 'bg-primary-light text-primary hover:bg-primary-light/80',
-      danger: 'bg-secondary text-white hover:bg-secondary-hover shadow-sm',
-      ghost: 'bg-transparent text-primary hover:bg-primary-light/50 border border-primary/30 hover:border-primary',
-      success: 'bg-accent-green text-white hover:bg-accent-emerald shadow-sm',
-      warning: 'bg-accent-yellow text-text-primary hover:bg-accent-yellow/90 shadow-sm',
+      primary: 'bg-primary text-white hover:bg-primary-hover shadow-sm',
+      secondary: 'bg-primary-light text-primary hover:bg-indigo-100/80 border border-primary/20',
+      danger: 'bg-transparent text-danger border border-danger/40 hover:bg-danger-light hover:border-danger shadow-none',
+      ghost: 'bg-transparent text-text-primary hover:bg-surface-subtle hover:text-primary',
+      success: 'bg-success text-white hover:bg-success-hover shadow-sm',
+      warning: 'bg-warning text-white hover:bg-warning-hover shadow-sm',
     };
 
     const sizes = {
-      sm: 'h-9 px-3 text-xs rounded-btn gap-1.5',
-      md: 'h-12 px-5 text-[15px] rounded-btn gap-2',
-      lg: 'h-14 px-7 text-base rounded-btn gap-2.5',
+      sm: 'min-h-[44px] px-3.5 text-xs rounded-btn gap-1.5',
+      md: 'min-h-[44px] h-11 px-5 text-sm rounded-btn gap-2',
+      lg: 'min-h-[48px] h-12 px-6 text-base rounded-btn gap-2.5',
     };
 
     return (

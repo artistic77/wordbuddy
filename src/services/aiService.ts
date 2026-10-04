@@ -482,8 +482,14 @@ export const generateVocabFromPrompt = async (
 
   const existingSet = new Set(existingWords.map((w) => w.toLowerCase()));
   const filteredWords = matchedWords.filter((w) => !existingSet.has(w)).slice(0, count);
+  const wordsToGenerate = filteredWords.length > 0 ? filteredWords : matchedWords.slice(0, count);
 
-  return batchGenerateVocabWithAzureOpenAI(filteredWords.length > 0 ? filteredWords : matchedWords.slice(0, count));
+  try {
+    return await batchGenerateVocabWithAzureOpenAI(wordsToGenerate);
+  } catch (err) {
+    console.warn('[AI Service] Fallback batch generation failed, translating individually:', err);
+    return Promise.all(wordsToGenerate.map((w) => translateWord(w)));
+  }
 };
 
 

@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import {
   translateWord,
@@ -203,12 +202,35 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     };
   }, [stopCamera]);
 
+  // Lock background scroll when open and handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   // Common UI state
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCustomCount, setIsCustomCount] = useState(false);
+  const modalRef = useRef<HTMLDivElement | null>(null);
   // Track whether we returned from a camera capture where the WebView was killed
   const [showCameraRetryHint, setShowCameraRetryHint] = useState(false);
 
@@ -815,72 +837,94 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
     { label: '🏥 Health & Hospital (การแพทย์)', prompt: 'Common medical terms, symptoms, doctor visits, and healthy living vocabulary' },
   ];
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-text-primary/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="w-full max-w-2xl my-auto max-h-[calc(100dvh-2.5rem)] flex flex-col">
-        <Card className="p-4 sm:p-6 shadow-modal border-primary/20 relative flex flex-col flex-1 max-h-[calc(100dvh-2.5rem)] overflow-hidden bg-white">
-          {/* Close button */}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-vocab-modal-title"
+      ref={modalRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-text-primary/50 backdrop-blur-xs animate-fade-in overflow-hidden"
+    >
+      <div className="w-full max-w-2xl my-auto max-h-[85dvh] flex flex-col bg-white rounded-2xl shadow-modal border border-border overflow-hidden">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-20 flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white border-b border-border flex-shrink-0">
+          <div className="min-w-0 pr-3">
+            <h2 id="add-vocab-modal-title" className="text-base sm:text-xl font-outfit font-bold text-text-primary truncate">
+              เพิ่มคำศัพท์ใหม่
+            </h2>
+            <p className="text-xs text-text-muted mt-0.5 truncate">
+              พิมพ์คำศัพท์ พรอมต์ AI หรือสแกนใบงานพร้อมคำอ่านไทย
+            </p>
+          </div>
           <button
+            type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-surface transition-colors z-10"
-            aria-label="Close"
+            aria-label="ปิดหน้าต่างเพิ่มคำศัพท์"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
 
-          {/* Modal Header */}
-          <div className="mb-3 pr-8 flex-shrink-0">
-            <h2 className="text-lg sm:text-2xl font-outfit font-bold text-text-primary">Add Vocabulary</h2>
-            <p className="text-xs text-text-secondary mt-0.5">
-              Add words by typing, AI Prompt generation, or scanning worksheets with <span className="font-semibold text-primary">คำอ่านภาษาไทย</span>!
-            </p>
-          </div>
-
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto max-h-[80dvh] p-4 sm:p-6 space-y-4">
           {/* 3 Tabs */}
-          <div className="grid grid-cols-3 gap-1.5 p-1 bg-surface rounded-2xl border border-border mb-3 flex-shrink-0">
+          <div
+            role="tablist"
+            aria-label="วิธีเพิ่มคำศัพท์"
+            className="grid grid-cols-3 gap-1.5 p-1 bg-surface-subtle rounded-xl border border-border flex-shrink-0"
+          >
             <button
+              role="tab"
+              aria-selected={activeTab === 'type'}
               type="button"
               onClick={() => handleTabChange('type')}
-              className={`py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs md:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 text-center ${
+              className={`min-h-[44px] py-2 px-1.5 sm:px-3 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 text-center ${
                 activeTab === 'type'
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-white/60'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-              <span className="truncate">Type Word</span>
+              <Sparkles className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">พิมพ์คำศัพท์</span>
             </button>
 
             <button
+              role="tab"
+              aria-selected={activeTab === 'prompt'}
               type="button"
               onClick={() => handleTabChange('prompt')}
-              className={`py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs md:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 text-center ${
+              className={`min-h-[44px] py-2 px-1.5 sm:px-3 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 text-center ${
                 activeTab === 'prompt'
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-white/60'
               }`}
             >
-              <Wand2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-              <span className="truncate">AI Prompt</span>
+              <Wand2 className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">พรอมต์ AI</span>
             </button>
 
             <button
+              role="tab"
+              aria-selected={activeTab === 'photo'}
               type="button"
               onClick={() => handleTabChange('photo')}
-              className={`py-2 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs md:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 text-center ${
+              className={`min-h-[44px] py-2 px-1.5 sm:px-3 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 text-center ${
                 activeTab === 'photo'
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-text-secondary hover:text-text-primary'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-white/60'
               }`}
             >
-              <Camera className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-              <span className="truncate">Photo Scan</span>
+              <Camera className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">สแกนรูปภาพ</span>
             </button>
           </div>
 
           {error && (
-            <div className="mb-3 p-3 rounded-xl bg-secondary-light border border-secondary/20 text-xs text-secondary flex items-start gap-2 flex-shrink-0">
-              <AlertTriangle className="w-4 h-4 text-secondary flex-shrink-0 mt-0.5" />
+            <div className="p-3 rounded-xl bg-danger-light border border-danger/20 text-xs text-danger flex items-start gap-2 flex-shrink-0">
+              <AlertTriangle className="w-4 h-4 text-danger flex-shrink-0 mt-0.5" />
               <div className="flex-1">{error}</div>
             </div>
           )}
@@ -1038,19 +1082,26 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                 </div>
               </div>
 
-              {/* Action Buttons (Fixed Footer) */}
-              <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3 flex-shrink-0">
-                <Button type="button" variant="ghost" size="md" onClick={onClose}>
-                  Cancel
-                </Button>
+              {/* Action Buttons (Fixed Footer: Primary on top for mobile, cancel below) */}
+              <div className="flex flex-col sm:flex-row-reverse sm:items-center sm:justify-start gap-2 pt-3 border-t border-border mt-3 flex-shrink-0">
                 <Button
                   type="submit"
                   variant="primary"
                   size="md"
+                  className="w-full sm:w-auto min-h-[44px]"
                   isLoading={isSaving}
-                  disabled={isSingleWordDuplicate}
+                  disabled={isSingleWordDuplicate || !wordEn.trim() || !wordTh.trim()}
                 >
-                  Save Word
+                  บันทึกคำศัพท์
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="md"
+                  onClick={onClose}
+                  className="w-full sm:w-auto min-h-[44px] text-text-secondary hover:text-text-primary"
+                >
+                  ยกเลิก
                 </Button>
               </div>
             </form>
@@ -1068,72 +1119,96 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                 >
                   <div className="flex-1 overflow-y-auto space-y-4 pr-1.5 pb-2">
                     {/* Prompt description */}
-                    <div>
-                      <label className="block text-sm font-semibold text-text-primary mb-1">
-                        Topic or Prompt for AI Vocabulary Generation
-                      </label>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm font-semibold text-text-primary">
+                          หัวข้อหรือกลุ่มคำศัพท์
+                        </label>
+                        <span className="text-xs text-text-muted">
+                          {aiPrompt.length}/200
+                        </span>
+                      </div>
                       <textarea
-                        rows={3}
-                        className="w-full p-3 rounded-xl bg-white border border-border text-text-primary text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
-                        placeholder="e.g. คำศัพท์เกี่ยวกับการเดินทางในสนามบินสำหรับนักเรียน ม.ต้น พร้อมตัวอย่างประโยค หรือ Daily conversation verbs"
+                        rows={2}
+                        maxLength={200}
+                        className="w-full p-3 rounded-xl bg-white border border-border text-text-primary text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus:border-primary resize-none placeholder:text-text-muted"
+                        placeholder="เช่น คำศัพท์สนามบิน (Airport Vocabulary)"
                         value={aiPrompt}
-                        onChange={(e) => setAiPrompt(e.target.value)}
+                        onChange={(e) => setAiPrompt(e.target.value.slice(0, 200))}
                         required
                         autoFocus
                       />
+                      <p className="text-xs text-text-muted leading-relaxed">
+                        ตัวอย่าง: คำศัพท์เกี่ยวกับการเดินทางในสนามบินสำหรับนักเรียน ม.ต้น หรือ Daily conversation verbs
+                      </p>
                     </div>
 
-                    {/* Word Count Selector (Max 50) */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-sm font-semibold text-text-primary">
-                          Number of Words (จำนวนคำ: 1 - 50 คำ)
-                        </label>
-                        <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary-light">
-                          {aiCount} words
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          max={50}
-                          value={aiCount}
-                          onChange={(e) => setAiCount(Math.min(Math.max(Number(e.target.value) || 1, 1), 50))}
-                          className="w-24 px-3 py-2 text-sm font-bold text-text-primary bg-white rounded-xl border border-border focus:outline-none focus:border-primary text-center"
-                        />
-                        <div className="flex flex-wrap gap-1.5">
-                          {[5, 10, 15, 20, 30, 50].map((c) => (
-                            <button
-                              key={c}
-                              type="button"
-                              onClick={() => setAiCount(c)}
-                              className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${
-                                aiCount === c
-                                  ? 'bg-primary text-white border-primary shadow-sm'
-                                  : 'bg-surface text-text-secondary border-border hover:bg-white'
-                              }`}
-                            >
-                              {c}
-                            </button>
-                          ))}
-                        </div>
+                    {/* Word Count Control: Single unified chip group */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-text-primary">
+                        จำนวนคำ
+                      </label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {[5, 10, 15, 20, 30, 50].map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => {
+                              setAiCount(c);
+                              setIsCustomCount(false);
+                            }}
+                            className={`min-h-[44px] min-w-[44px] px-3.5 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                              !isCustomCount && aiCount === c
+                                ? 'bg-primary text-white border-primary shadow-xs'
+                                : 'bg-white text-text-secondary border-border hover:border-primary/40 hover:text-text-primary'
+                            }`}
+                          >
+                            {c}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomCount(true)}
+                          className={`min-h-[44px] px-3.5 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                            isCustomCount
+                              ? 'bg-primary text-white border-primary shadow-xs'
+                              : 'bg-white text-text-secondary border-border hover:border-primary/40 hover:text-text-primary'
+                          }`}
+                        >
+                          กำหนดเอง
+                        </button>
+                        {isCustomCount && (
+                          <div className="flex items-center gap-1.5 ml-1">
+                            <input
+                              type="number"
+                              min={1}
+                              max={50}
+                              value={aiCount}
+                              onChange={(e) =>
+                                setAiCount(Math.min(Math.max(Number(e.target.value) || 1, 1), 50))
+                              }
+                              className="w-20 min-h-[44px] px-2.5 py-1.5 text-sm font-bold text-text-primary bg-white rounded-xl border border-primary text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                              autoFocus
+                              placeholder="1-50"
+                            />
+                            <span className="text-xs text-text-muted">คำ</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Quick Suggestion Chips */}
-                    <div>
-                      <label className="block text-xs font-semibold text-text-secondary mb-2">
-                        Quick Topic Ideas (กดเลือกเพื่อใส่หัวข้อทันที):
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold text-text-muted">
+                        หัวข้อยอดนิยมแนะนำ (กดเพื่อใส่หัวข้อทันที):
                       </label>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {promptSuggestions.map((s, idx) => (
                           <button
                             key={idx}
                             type="button"
                             onClick={() => setAiPrompt(s.prompt)}
-                            className="text-xs font-medium px-2.5 py-1 rounded-lg bg-surface border border-border/80 text-text-primary hover:border-primary hover:text-primary transition-colors text-left"
+                            className="min-h-[44px] text-xs font-medium px-3 py-2 rounded-xl bg-surface border border-border text-text-secondary hover:border-primary hover:text-primary transition-colors text-left"
                           >
                             {s.label}
                           </button>
@@ -1142,20 +1217,34 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Submit Button */}
-                  <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3 flex-shrink-0">
-                    <Button type="button" variant="ghost" size="md" onClick={onClose}>
-                      Cancel
-                    </Button>
+                  {/* Submit Button & Hint */}
+                  <div className="flex flex-col sm:flex-row-reverse sm:items-center sm:justify-start gap-2 pt-3 border-t border-border mt-3 flex-shrink-0">
+                    <div className="w-full sm:w-auto flex flex-col items-stretch sm:items-end gap-1">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="md"
+                        className="w-full sm:w-auto min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                        isLoading={isGeneratingPrompt}
+                        disabled={!aiPrompt.trim()}
+                      >
+                        <Wand2 className="w-4 h-4 mr-1.5" />
+                        สร้างคำศัพท์ {aiCount} คำด้วย AI
+                      </Button>
+                      {!aiPrompt.trim() && (
+                        <span className="text-[11px] text-text-muted text-center sm:text-right">
+                          * กรอกหัวข้อก่อน
+                        </span>
+                      )}
+                    </div>
                     <Button
-                      type="submit"
-                      variant="primary"
+                      type="button"
+                      variant="ghost"
                       size="md"
-                      isLoading={isGeneratingPrompt}
-                      disabled={!aiPrompt.trim()}
+                      onClick={onClose}
+                      className="w-full sm:w-auto min-h-[44px] text-text-secondary hover:text-text-primary"
                     >
-                      <Wand2 className="w-4 h-4 mr-1.5" />
-                      Generate {aiCount} Words
+                      ยกเลิก
                     </Button>
                   </div>
                 </form>
@@ -1368,25 +1457,27 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                   </div>
 
                   {/* Actions Footer */}
-                  <div className="flex items-center justify-between pt-3 border-t border-border flex-shrink-0">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="md"
-                      onClick={() => setPromptDrafts([])}
-                    >
-                      Back to Prompt
-                    </Button>
-
+                  <div className="flex flex-col sm:flex-row-reverse sm:items-center sm:justify-between gap-2 pt-3 border-t border-border flex-shrink-0">
                     <Button
                       type="button"
                       variant="primary"
                       size="md"
+                      className="w-full sm:w-auto min-h-[44px]"
                       onClick={handleBatchSavePromptWords}
                       isLoading={isSaving}
                       disabled={selectedPromptCount === 0}
                     >
-                      Add {selectedPromptCount} Words to Set
+                      เพิ่ม {selectedPromptCount} คำเข้าชุดคำศัพท์
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="md"
+                      className="w-full sm:w-auto min-h-[44px] text-text-secondary hover:text-text-primary"
+                      onClick={() => setPromptDrafts([])}
+                    >
+                      ย้อนกลับไปหน้าพรอมต์
                     </Button>
                   </div>
                 </div>
@@ -1860,36 +1951,38 @@ export const AddVocabModal: React.FC<AddVocabModalProps> = ({
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row-reverse sm:items-center sm:justify-between gap-2 pt-3 border-t border-border flex-shrink-0">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="md"
+                      className="w-full sm:w-auto min-h-[44px]"
+                      onClick={handleBatchSavePhoto}
+                      isLoading={isSaving}
+                      disabled={selectedPhotoCount === 0}
+                    >
+                      นำเข้า {selectedPhotoCount} คำที่เลือก
+                    </Button>
+
                     <Button
                       type="button"
                       variant="ghost"
                       size="md"
+                      className="w-full sm:w-auto min-h-[44px] text-text-secondary hover:text-text-primary"
                       onClick={() => {
                         setExtractedWords([]);
                         setDetectedSheetTitle(null);
                         setImagePreview(null);
                       }}
                     >
-                      Cancel
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="primary"
-                      size="md"
-                      onClick={handleBatchSavePhoto}
-                      isLoading={isSaving}
-                      disabled={selectedPhotoCount === 0}
-                    >
-                      Import {selectedPhotoCount} Selected Words
+                      ยกเลิก
                     </Button>
                   </div>
                 </div>
               )}
             </div>
           )}
-        </Card>
+        </div>
       </div>
     </div>
   );

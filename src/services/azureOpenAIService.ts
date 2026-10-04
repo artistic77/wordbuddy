@@ -110,8 +110,9 @@ export const callOpenAIApi = async (body: any): Promise<any> => {
   const primaryUrl = getAzureOpenAIUrl();
   const directUrl = getDirectOpenAIUrl();
 
+  const isBrowser = typeof window !== 'undefined';
   const urlsToTry = [primaryUrl];
-  if (primaryUrl !== directUrl) {
+  if (primaryUrl !== directUrl && (!isBrowser || !directUrl.includes('dentsu.com'))) {
     urlsToTry.push(directUrl);
   }
 
@@ -136,7 +137,12 @@ export const callOpenAIApi = async (body: any): Promise<any> => {
         throw lastError;
       }
 
-      return await res.json();
+      const text = await res.text();
+      if (!text || !text.trim()) {
+        throw new Error(`AI Gateway returned an empty response (${res.status})`);
+      }
+
+      return JSON.parse(text);
     } catch (err: any) {
       lastError = err;
       console.warn(`[AI Gateway] Attempt failed on ${url}:`, err);

@@ -25,6 +25,8 @@ import {
   User as UserIcon,
   CheckCircle2,
   Clock,
+  ChevronRight,
+  MoreVertical,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -54,6 +56,10 @@ export const SetDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEntryForEdit, setSelectedEntryForEdit] = useState<VocabEntry | null>(null);
+
+  // Overflow menu & delete modal state
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Bulk selection & deletion state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -230,17 +236,15 @@ export const SetDetailPage: React.FC = () => {
 
   const handleDeleteSet = async () => {
     if (!set || user?.id !== set.owner_id) return;
-    const confirmMsg = `Are you sure you want to delete "${set.title}" and all ${entries.length} vocabulary words? This action cannot be undone.`;
-    if (!window.confirm(confirmMsg)) return;
-
     setIsDeletingSet(true);
     try {
       const { error } = await supabase.from('vocab_sets').delete().eq('id', set.id);
       if (error) throw error;
+      setShowDeleteConfirm(false);
       navigate('/sets');
     } catch (err) {
       console.error('Failed to delete vocab set:', err);
-      alert('Failed to delete vocabulary set.');
+      alert('ลบชุดคำศัพท์ไม่สำเร็จ');
       setIsDeletingSet(false);
     }
   };
@@ -493,9 +497,46 @@ export const SetDetailPage: React.FC = () => {
 
   if (isLoading || !set) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center space-y-3">
-        <div className="w-10 h-10 border-4 border-primary-light border-t-primary rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-text-secondary">Loading vocabulary set...</p>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 animate-pulse">
+        <div className="h-5 w-32 bg-neutral-200 rounded-lg" />
+
+        {/* Header Card Skeleton */}
+        <div className="p-6 bg-white rounded-2xl border border-border space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="h-6 w-28 bg-neutral-200 rounded-full" />
+            <div className="h-8 w-8 bg-neutral-200 rounded-xl" />
+          </div>
+          <div className="h-8 w-64 bg-neutral-200 rounded-lg" />
+          <div className="h-4 w-96 max-w-full bg-neutral-100 rounded" />
+          <div className="h-11 w-full bg-neutral-200 rounded-xl" />
+
+          {/* Progress & Stats Skeleton */}
+          <div className="pt-4 border-t border-border space-y-3">
+            <div className="h-3 w-full bg-neutral-200 rounded-full" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="h-16 bg-neutral-100 rounded-xl" />
+              <div className="h-16 bg-neutral-100 rounded-xl" />
+              <div className="h-16 bg-neutral-100 rounded-xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* Word List Skeleton */}
+        <div className="space-y-3">
+          <div className="h-6 w-40 bg-neutral-200 rounded-lg" />
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="p-4 bg-white rounded-xl border border-border flex items-center justify-between"
+            >
+              <div className="space-y-2 flex-1">
+                <div className="h-5 w-36 bg-neutral-200 rounded" />
+                <div className="h-4 w-48 bg-neutral-100 rounded" />
+              </div>
+              <div className="h-8 w-20 bg-neutral-200 rounded-lg" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -511,65 +552,106 @@ export const SetDetailPage: React.FC = () => {
         className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-text-secondary hover:text-primary transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Sets
+        กลับหน้ารายการชุดคำศัพท์
       </Link>
 
       {/* Set Header Card */}
-      <Card className="p-4 sm:p-7 space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="space-y-2 flex-1 min-w-0 w-full">
+      <Card className="p-4 sm:p-6 space-y-5">
+        <div className="space-y-4">
+          {/* Top Row: Word count & Privacy Toggle (Left) + Overflow Menu (Right) */}
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="noun" size="sm">
                 <BookOpen className="w-3.5 h-3.5 mr-1" />
-                {entries.length} {entries.length === 1 ? 'word' : 'words'}
+                {entries.length} คำ
               </Badge>
 
-              {/* Privacy badge: interactive for owner, informative for non-owners */}
+              {/* Real Privacy Toggle: label "การมองเห็น" + Switch (ส่วนตัว / สาธารณะ) */}
               {isOwner ? (
-                <button
-                  type="button"
-                  onClick={handleTogglePrivacy}
-                  disabled={isTogglingPrivacy}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow-sm active:scale-95 ${
-                    set.is_public
-                      ? 'bg-accent-teal-light text-accent-teal border-accent-teal/30 hover:bg-accent-teal/20'
-                      : 'bg-gray-100 text-text-secondary border-gray-200 hover:bg-gray-200'
-                  }`}
-                  title="Click to toggle Public / Private"
-                >
-                  {set.is_public ? (
-                    <>
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>Public (Click to make Private)</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Private (Click to make Public)</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2 bg-surface-subtle px-2.5 py-1 rounded-xl border border-border">
+                  <span className="text-xs font-semibold text-text-secondary">การมองเห็น:</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={set.is_public}
+                    aria-label="สลับการมองเห็น ส่วนตัว หรือ สาธารณะ"
+                    onClick={handleTogglePrivacy}
+                    disabled={isTogglingPrivacy}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      set.is_public ? 'bg-primary' : 'bg-neutral-300'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        set.is_public ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-xs font-bold text-text-primary">
+                    {set.is_public ? 'สาธารณะ' : 'ส่วนตัว'}
+                  </span>
+                </div>
               ) : (
                 <>
-                  {set.is_public ? (
-                    <Badge variant="adj" size="sm">
-                      <Globe className="w-3.5 h-3.5 mr-1" /> Public
-                    </Badge>
-                  ) : (
-                    <Badge variant="other" size="sm">
-                      <Lock className="w-3.5 h-3.5 mr-1" /> Private
-                    </Badge>
-                  )}
+                  <Badge variant={set.is_public ? 'adj' : 'other'} size="sm">
+                    {set.is_public ? (
+                      <>
+                        <Globe className="w-3.5 h-3.5 mr-1" /> สาธารณะ
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5 mr-1" /> ส่วนตัว
+                      </>
+                    )}
+                  </Badge>
                   {authorName && (
                     <Badge variant="default" size="sm" className="bg-slate-100 text-slate-700 border-slate-200">
-                      <UserIcon className="w-3.5 h-3.5 mr-1" /> by {authorName}
+                      <UserIcon className="w-3.5 h-3.5 mr-1" /> โดย {authorName}
                     </Badge>
                   )}
                 </>
               )}
             </div>
 
-            {/* Editable Title */}
+            {/* Overflow "⋯" Menu for Destructive Action */}
+            {isOwner && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  aria-label="ตัวเลือกเพิ่มเติม"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-border bg-white text-text-secondary hover:text-text-primary hover:bg-surface transition-colors"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                {isMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-30"
+                      onClick={() => setIsMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1.5 z-40 w-44 rounded-xl bg-white border border-border shadow-modal py-1 animate-fade-in">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setShowDeleteConfirm(true);
+                        }}
+                        className="w-full min-h-[44px] px-3.5 py-2 text-left text-xs font-semibold text-danger hover:bg-danger-light flex items-center gap-2 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-danger flex-shrink-0" />
+                        ลบชุดคำศัพท์
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Title Row with Secondary Favorite Button inline */}
+          <div className="space-y-1">
             {isEditingTitle && isOwner ? (
               <div className="flex items-center gap-2 w-full max-w-xl">
                 <input
@@ -583,16 +665,17 @@ export const SetDetailPage: React.FC = () => {
                       setIsEditingTitle(false);
                     }
                   }}
-                  className="flex-1 min-w-0 text-lg sm:text-2xl md:text-3xl font-outfit font-bold text-text-primary px-3 py-1.5 rounded-xl border-2 border-primary bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                  className="flex-1 min-w-0 text-lg sm:text-2xl font-outfit font-bold text-text-primary px-3 py-1.5 rounded-xl border-2 border-primary bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-xs"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={handleSaveTitle}
-                  className="p-2 sm:p-2.5 rounded-xl bg-accent-green text-white hover:bg-accent-emerald transition-colors flex-shrink-0 shadow-sm"
-                  title="Save title"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-success text-white hover:bg-success-hover transition-colors flex-shrink-0 shadow-xs"
+                  title="บันทึกชื่อ"
+                  aria-label="บันทึกชื่อ"
                 >
-                  <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Check className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
@@ -600,22 +683,46 @@ export const SetDetailPage: React.FC = () => {
                     setEditedTitle(set.title);
                     setIsEditingTitle(false);
                   }}
-                  className="p-2 sm:p-2.5 rounded-xl bg-gray-100 text-text-secondary hover:bg-gray-200 transition-colors flex-shrink-0"
-                  title="Cancel"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-neutral-100 text-text-secondary hover:bg-neutral-200 transition-colors flex-shrink-0"
+                  title="ยกเลิก"
+                  aria-label="ยกเลิก"
                 >
-                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <h1 className="text-xl sm:text-3xl font-outfit font-bold text-text-primary">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-outfit font-bold text-text-primary tracking-tight">
                   {set.title}
                 </h1>
+                {/* Secondary Favorite Button: Icon-only button next to set title */}
+                {user && (
+                  <button
+                    type="button"
+                    onClick={handleToggleFavorite}
+                    disabled={isTogglingFavorite}
+                    aria-label={isFavorited ? 'นำออกจากชุดโปรด' : 'บันทึกเป็นชุดโปรด'}
+                    title={isFavorited ? 'นำออกจากชุดโปรด' : 'บันทึกเป็นชุดโปรด'}
+                    className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border transition-all ${
+                      isFavorited
+                        ? 'bg-amber-50 text-amber-500 border-amber-300 shadow-xs'
+                        : 'bg-white text-text-muted border-border hover:border-amber-300 hover:text-amber-500'
+                    }`}
+                  >
+                    <Star
+                      className={`w-5 h-5 ${
+                        isFavorited ? 'fill-amber-400 text-amber-500' : 'text-text-muted'
+                      }`}
+                    />
+                  </button>
+                )}
                 {isOwner && (
                   <button
+                    type="button"
                     onClick={() => setIsEditingTitle(true)}
-                    className="p-1 text-text-secondary hover:text-primary transition-colors"
-                    title="Edit title"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-text-muted hover:text-primary transition-colors"
+                    title="แก้ไขชื่อชุดคำศัพท์"
+                    aria-label="แก้ไขชื่อชุดคำศัพท์"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -624,78 +731,43 @@ export const SetDetailPage: React.FC = () => {
             )}
 
             {set.description && (
-              <p className="text-xs sm:text-sm text-text-secondary italic max-w-2xl">{set.description}</p>
+              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed max-w-2xl">
+                {set.description}
+              </p>
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            {/* Favorite Button (for authenticated users) */}
-            {user && (
+          {/* PRIMARY ACTION: Full width, filled */}
+          <div>
+            {isOwner ? (
               <Button
-                variant="secondary"
+                variant="primary"
                 size="md"
-                onClick={handleToggleFavorite}
-                disabled={isTogglingFavorite}
-                className={`border transition-all ${
-                  isFavorited
-                    ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 shadow-sm'
-                    : 'hover:border-amber-400 hover:text-amber-600'
-                }`}
-                title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                onClick={() => setIsAddModalOpen(true)}
+                className="w-full min-h-[44px] font-bold text-sm sm:text-base shadow-sm"
               >
-                <Star
-                  className={`w-4 h-4 mr-1.5 ${
-                    isFavorited ? 'fill-amber-400 text-amber-500' : 'text-text-secondary'
-                  }`}
-                />
-                {isFavorited ? 'Favorited' : 'Favorite'}
+                <Plus className="w-5 h-5 mr-1.5" />
+                + เพิ่มคำศัพท์
               </Button>
-            )}
-
-            {/* Copy Set Button for non-owners */}
-            {!isOwner && (
+            ) : (
               <Button
                 variant="secondary"
                 size="md"
                 onClick={handleCopySet}
                 disabled={isCopying || copiedSuccess}
-                className="border-primary/20 hover:border-primary text-primary"
+                className="w-full min-h-[44px] border-primary/20 text-primary font-bold text-sm sm:text-base"
               >
                 {copiedSuccess ? (
                   <>
-                    <Check className="w-4 h-4 mr-1.5 text-accent-green" />
-                    Copied to My Sets!
+                    <Check className="w-4 h-4 mr-1.5 text-success" />
+                    คัดลอกเข้าชุดคำศัพท์ของฉันแล้ว!
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4 mr-1.5" />
-                    {isCopying ? 'Copying...' : 'Copy to My Sets'}
+                    {isCopying ? 'กำลังคัดลอก...' : 'คัดลอกเข้าชุดคำศัพท์ของฉัน'}
                   </>
                 )}
-              </Button>
-            )}
-
-            {/* Add Words for owners */}
-            {isOwner && (
-              <Button variant="primary" size="md" onClick={() => setIsAddModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add Words (AI / Photo / Type)
-              </Button>
-            )}
-
-            {/* Delete Set Button for owners */}
-            {isOwner && (
-              <Button
-                variant="danger"
-                size="md"
-                onClick={handleDeleteSet}
-                disabled={isDeletingSet}
-                className="bg-secondary/10 hover:bg-secondary text-secondary hover:text-white border border-secondary/30 transition-colors"
-                title="Delete this vocabulary set"
-              >
-                <Trash2 className="w-4 h-4 mr-1.5" />
-                {isDeletingSet ? 'Deleting...' : 'Delete Set'}
               </Button>
             )}
           </div>
@@ -703,108 +775,101 @@ export const SetDetailPage: React.FC = () => {
 
         {/* Mastery Stats & Progress Banner */}
         {entries.length > 0 && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-50/70 via-white to-amber-50/70 border border-border/80 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-accent-gold" />
-                <span className="text-sm font-bold font-outfit text-text-primary">
-                  Vocab Mastery Progress (ความก้าวหน้าการเรียนรู้)
-                </span>
-              </div>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 self-start sm:self-auto border border-emerald-200">
-                จำได้แล้ว {masteryPercentage}% ({masteredCount}/{entries.length} คำ)
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-border shadow-xs space-y-3">
+            {/* Header: Progress title and "0/15 คำ (0%)" above progress bar */}
+            <div className="flex items-center justify-between text-xs sm:text-sm font-semibold">
+              <span className="font-bold text-text-primary">ความคืบหน้าการเรียนรู้</span>
+              <span className="font-outfit font-bold text-primary">
+                {masteredCount}/{entries.length} คำ ({masteryPercentage}%)
               </span>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full h-2.5 bg-gray-200/80 rounded-full overflow-hidden flex">
+            <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                className="h-full bg-primary transition-all duration-500 rounded-full"
                 style={{ width: `${masteryPercentage}%` }}
               />
             </div>
 
-            {/* Stat Badges */}
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-4 pt-1">
-              <div
+            {/* Grid-cols-3 Stat Badges: Consistent styling, only active filter is highlighted */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-1">
+              <button
+                type="button"
                 onClick={() => setFilterStatus('mastered')}
-                className={`p-2 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 ${
+                className={`p-2.5 sm:p-3 rounded-xl border text-center transition-all ${
                   filterStatus === 'mastered'
                     ? 'bg-emerald-50 border-emerald-400 ring-2 ring-emerald-200'
-                    : 'bg-white/90 border-emerald-200/80 hover:border-emerald-300'
+                    : 'bg-white border-border hover:border-emerald-300'
                 }`}
                 title="คลิกเพื่อกรองเฉพาะคำที่จำได้แล้ว"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium truncate">จำได้แล้ว</p>
-                  <p className="text-sm sm:text-lg font-bold font-outfit text-emerald-700">
-                    {masteredCount} <span className="text-[10px] sm:text-xs font-normal">คำ</span>
-                  </p>
-                </div>
-              </div>
+                <p className="text-[11px] sm:text-xs text-text-muted truncate">จำได้แล้ว</p>
+                <p className="text-base sm:text-lg font-bold font-outfit text-emerald-700">
+                  {masteredCount} <span className="text-[10px] font-normal text-text-muted">คำ</span>
+                </p>
+              </button>
 
-              <div
+              <button
+                type="button"
                 onClick={() => setFilterStatus('unmastered')}
-                className={`p-2 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 ${
+                className={`p-2.5 sm:p-3 rounded-xl border text-center transition-all ${
                   filterStatus === 'unmastered'
                     ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-200'
-                    : 'bg-white/90 border-amber-200/80 hover:border-amber-300'
+                    : 'bg-white border-border hover:border-amber-300'
                 }`}
                 title="คลิกเพื่อกรองเฉพาะคำที่ยังจำไม่ได้"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
-                  <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-1">
+                  <Clock className="w-3.5 h-3.5" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium truncate">ยังจำไม่ได้</p>
-                  <p className="text-sm sm:text-lg font-bold font-outfit text-amber-700">
-                    {unmasteredCount} <span className="text-[10px] sm:text-xs font-normal">คำ</span>
-                  </p>
-                </div>
-              </div>
+                <p className="text-[11px] sm:text-xs text-text-muted truncate">ยังจำไม่ได้</p>
+                <p className="text-base sm:text-lg font-bold font-outfit text-amber-700">
+                  {unmasteredCount} <span className="text-[10px] font-normal text-text-muted">คำ</span>
+                </p>
+              </button>
 
-              <div
+              <button
+                type="button"
                 onClick={() => setFilterStatus('all')}
-                className={`p-2 sm:p-3 rounded-xl border transition-all cursor-pointer text-center sm:text-left flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 ${
+                className={`p-2.5 sm:p-3 rounded-xl border text-center transition-all ${
                   filterStatus === 'all'
-                    ? 'bg-primary-light/40 border-primary ring-2 ring-primary/20'
-                    : 'bg-white/90 border-border hover:border-primary/40'
+                    ? 'bg-indigo-50 border-primary ring-2 ring-primary/20'
+                    : 'bg-white border-border hover:border-primary/40'
                 }`}
                 title="คลิกเพื่อดูคำศัพท์ทั้งหมด"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center mx-auto sm:mx-0 flex-shrink-0">
-                  <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <div className="w-6 h-6 rounded-lg bg-primary-light text-primary flex items-center justify-center mx-auto mb-1">
+                  <BookOpen className="w-3.5 h-3.5" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] sm:text-xs text-text-secondary font-medium truncate">ทั้งหมด</p>
-                  <p className="text-sm sm:text-lg font-bold font-outfit text-primary">
-                    {entries.length} <span className="text-[10px] sm:text-xs font-normal">คำ</span>
-                  </p>
-                </div>
-              </div>
+                <p className="text-[11px] sm:text-xs text-text-muted truncate">ทั้งหมด</p>
+                <p className="text-base sm:text-lg font-bold font-outfit text-primary">
+                  {entries.length} <span className="text-[10px] font-normal text-text-muted">คำ</span>
+                </p>
+              </button>
             </div>
           </div>
         )}
 
         {/* Study Modes Bar */}
         {entries.length > 0 && (
-          <div className="pt-5 border-t border-border space-y-3">
+          <div className="pt-4 border-t border-border space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-text-secondary">
-                Choose Study Mode (5 Interactive Games)
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+                โหมดฝึกฝนคำศัพท์ (5 เกมการเรียนรู้)
               </h3>
 
-              {/* Study Scope Toggle: ฝึกเฉพาะคำที่ยังจำไม่ได้ vs ฝึกทุกคำ */}
-              <div className="w-full sm:w-auto grid grid-cols-2 sm:flex p-1 bg-surface-muted rounded-xl border border-border/80 text-xs font-semibold">
+              {/* Study Scope Toggle: Proper segmented control, equal widths, no overflow */}
+              <div className="w-full sm:w-72 grid grid-cols-2 p-1 bg-surface-subtle rounded-xl border border-border text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setStudyScope('unmastered')}
-                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-center ${
+                  className={`min-h-[44px] py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 text-center truncate ${
                     studyScope === 'unmastered'
-                      ? 'bg-white text-amber-800 shadow-xs font-bold border border-amber-200'
+                      ? 'bg-white text-amber-800 shadow-xs border border-amber-300 font-bold'
                       : 'text-text-secondary hover:text-text-primary'
                   }`}
                 >
@@ -814,9 +879,9 @@ export const SetDetailPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setStudyScope('all')}
-                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer text-center ${
+                  className={`min-h-[44px] py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 text-center truncate ${
                     studyScope === 'all'
-                      ? 'bg-white text-primary shadow-xs font-bold border border-primary/20'
+                      ? 'bg-white text-primary shadow-xs border border-primary/20 font-bold'
                       : 'text-text-secondary hover:text-text-primary'
                   }`}
                 >
@@ -828,87 +893,78 @@ export const SetDetailPage: React.FC = () => {
 
             {/* Hint if all words are mastered and scope is unmastered */}
             {studyScope === 'unmastered' && unmasteredCount === 0 && (
-              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <span>ยอดเยี่ยมมาก! คุณจำคำศัพท์ในชุดนี้ได้ครบทุกคำแล้ว โหมดฝึกจะทบทวนคำศัพท์ทั้งหมดให้ครับ</span>
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
-              {/* 1. Flashcards */}
-              <Link to={`/sets/${set.id}/study/flashcard?scope=${studyScope}`} className="block">
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="w-full justify-start h-13 sm:h-14 bg-gradient-to-r from-primary to-primary-hover shadow-sm"
-                >
-                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-xs sm:text-sm font-bold">1. Flashcards</p>
-                    <p className="text-[10px] sm:text-[11px] font-normal opacity-90">Memory cards</p>
-                  </div>
-                </Button>
-              </Link>
-
-              {/* 2. Spelling Game */}
-              <Link to={`/sets/${set.id}/study/spelling?scope=${studyScope}`} className="block">
-                <Button
-                  variant="secondary"
-                  size="md"
-                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
-                >
-                  <Headphones className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-xs sm:text-sm font-bold text-text-primary">2. Spelling Quiz</p>
-                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">Listen & spell</p>
-                  </div>
-                </Button>
-              </Link>
-
-              {/* 3. Multiple Choice */}
-              <Link to={`/sets/${set.id}/study/multiple_choice?scope=${studyScope}`} className="block">
-                <Button
-                  variant="secondary"
-                  size="md"
-                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
-                >
-                  <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-xs sm:text-sm font-bold text-text-primary">3. Quiz (Choice)</p>
-                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">4 Thai options</p>
-                  </div>
-                </Button>
-              </Link>
-
-              {/* 4. Word Matching */}
-              <Link to={`/sets/${set.id}/study/matching?scope=${studyScope}`} className="block">
-                <Button
-                  variant="secondary"
-                  size="md"
-                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
-                >
-                  <Puzzle className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-xs sm:text-sm font-bold text-text-primary">4. Matching</p>
-                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">Pair EN & TH</p>
-                  </div>
-                </Button>
-              </Link>
-
-              {/* 5. Fill in the Blank */}
-              <Link to={`/sets/${set.id}/study/fill_blank?scope=${studyScope}`} className="block sm:col-span-2 md:col-span-1">
-                <Button
-                  variant="secondary"
-                  size="md"
-                  className="w-full justify-start h-13 sm:h-14 border border-primary/20 hover:border-primary"
-                >
-                  <PenTool className="w-4 h-4 sm:w-5 sm:h-5 mr-2.5 text-primary flex-shrink-0" />
-                  <div className="text-left">
-                    <p className="text-xs sm:text-sm font-bold text-text-primary">5. Fill in Blank</p>
-                    <p className="text-[10px] sm:text-[11px] font-normal text-text-secondary">Sentence blanks</p>
-                  </div>
-                </Button>
-              </Link>
+            {/* ONE consistent card style for all 5 games (number badge + title + subtitle + chevron) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3">
+              {[
+                {
+                  num: 1,
+                  title: 'Flashcards',
+                  sub: 'เปิดดูการ์ด ฟังเสียงอ่าน',
+                  icon: Layers,
+                  path: 'flashcard',
+                },
+                {
+                  num: 2,
+                  title: 'Spelling Quiz',
+                  sub: 'ฟังเสียงและสะกดคำ',
+                  icon: Headphones,
+                  path: 'spelling',
+                },
+                {
+                  num: 3,
+                  title: 'Choice Quiz',
+                  sub: 'ปรนัย 4 ตัวเลือก',
+                  icon: HelpCircle,
+                  path: 'multiple_choice',
+                },
+                {
+                  num: 4,
+                  title: 'Matching',
+                  sub: 'จับคู่คำศัพท์ EN-TH',
+                  icon: Puzzle,
+                  path: 'matching',
+                },
+                {
+                  num: 5,
+                  title: 'Fill in Blank',
+                  sub: 'เติมคำในช่องว่าง',
+                  icon: PenTool,
+                  path: 'fill_blank',
+                },
+              ].map((game) => {
+                const Icon = game.icon;
+                return (
+                  <Link
+                    key={game.path}
+                    to={`/sets/${set.id}/study/${game.path}?scope=${studyScope}`}
+                    className="block group"
+                  >
+                    <div className="min-h-[56px] p-3 rounded-xl bg-white border border-border hover:border-primary/40 hover:shadow-card transition-all flex items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-primary-light text-primary flex items-center justify-center font-outfit font-bold text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                          {game.num}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-bold text-text-primary truncate group-hover:text-primary transition-colors flex items-center gap-1">
+                            <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                            <span className="truncate">{game.title}</span>
+                          </p>
+                          <p className="text-[11px] text-text-muted truncate">
+                            {game.sub}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1248,6 +1304,52 @@ export const SetDetailPage: React.FC = () => {
           >
             <Plus className="w-7 h-7" />
           </button>
+        </div>
+      )}
+
+      {/* Delete Set Confirm Dialog Modal */}
+      {showDeleteConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-set-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-xs animate-fade-in"
+        >
+          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-modal border border-border space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-danger-light text-danger flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-1.5">
+              <h3 id="delete-set-title" className="text-lg font-outfit font-bold text-text-primary">
+                ยืนยันการลบชุดคำศัพท์
+              </h3>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                คุณแน่ใจหรือไม่ว่าต้องการลบชุดคำศัพท์ &ldquo;{set.title}&rdquo; และคำศัพท์ทั้งหมด {entries.length} คำ? การกระทำนี้ไม่สามารถย้อนกลับได้
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row-reverse gap-2 pt-2">
+              <Button
+                variant="danger"
+                size="md"
+                className="w-full sm:w-auto min-h-[44px]"
+                onClick={handleDeleteSet}
+                disabled={isDeletingSet}
+                isLoading={isDeletingSet}
+              >
+                ลบชุดคำศัพท์
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="md"
+                className="w-full sm:w-auto min-h-[44px] text-text-secondary hover:text-text-primary"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeletingSet}
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
