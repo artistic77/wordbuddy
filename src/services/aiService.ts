@@ -1,12 +1,19 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { parseImageWithOCRSpace, tokenizeVocabWords } from './ocrSpaceService';
 import {
+  generateVocabWithGemini,
+  batchGenerateVocabWithGemini,
+  extractVocabListWithGeminiVision,
+  generateVocabFromPromptWithGemini,
+  isGeminiConfigured,
+  type ExtractedVocabSheet,
+} from './geminiService';
+import {
   generateVocabWithAzureOpenAI,
   batchGenerateVocabWithAzureOpenAI,
   extractVocabListWithAzureVision,
   generateVocabFromPromptWithAzureOpenAI,
   isAzureOpenAIConfigured,
-  type ExtractedVocabSheet,
 } from './azureOpenAIService';
 import { translateWithAzure, batchTranslateWithAzure, isAzureTranslatorConfigured } from './azureTranslatorService';
 import { getThaiPhonetic, COMMON_PHONETICS } from './phoneticService';
@@ -141,7 +148,7 @@ const EDUCATIONAL_DICTIONARY: Record<string, TranslationResponse> = {
 
 export const translateWord = async (word: string): Promise<TranslationResponse> => {
   const cleanWord = word.trim().toLowerCase();
-  console.log(`[AI Service] translateWord("${word}") | Azure OpenAI configured: ${isAzureOpenAIConfigured()} | Azure Translator configured: ${isAzureTranslatorConfigured()}`);
+  console.log(`[AI Service] translateWord("${word}") | Gemini configured: ${isGeminiConfigured()} | Azure OpenAI configured: ${isAzureOpenAIConfigured()}`);
 
   // 1. Check local dictionary first for instant response
   if (EDUCATIONAL_DICTIONARY[cleanWord]) {
@@ -149,10 +156,23 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
     return EDUCATIONAL_DICTIONARY[cleanWord];
   }
 
-  // 2. Microsoft Azure OpenAI Service (gpt-4o-mini) (Priority 1)
+  // 2. Google AI Studio (Gemini) (Priority 1)
+  if (isGeminiConfigured()) {
+    try {
+      console.log(`[AI Service] Calling Google AI Studio (Gemini) for "${word}"...`);
+      const geminiResult = await generateVocabWithGemini(word.trim());
+      if (geminiResult && geminiResult.word_th) {
+        return geminiResult;
+      }
+    } catch (err) {
+      console.warn('Google AI Studio (Gemini) call failed, trying Azure fallback:', err);
+    }
+  }
+
+  // 3. Microsoft Azure OpenAI Service (gpt-4o-mini) (Priority 2 / Fallback)
   if (isAzureOpenAIConfigured()) {
     try {
-      console.log(`[AI Service] Calling Azure OpenAI (gpt-4.1-mini) for "${word}"...`);
+      console.log(`[AI Service] Calling Azure OpenAI for "${word}"...`);
       const azOpenAiResult = await generateVocabWithAzureOpenAI(word.trim());
       if (azOpenAiResult && azOpenAiResult.word_th) {
         return azOpenAiResult;
@@ -162,7 +182,7 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
     }
   }
 
-  // 3. Microsoft Azure Translator API (Priority 2)
+  // 4. Microsoft Azure Translator API (Priority 3 / Fallback)
   if (isAzureTranslatorConfigured()) {
     try {
       console.log(`[AI Service] Calling Azure Translator for "${word}"...`);
@@ -172,7 +192,7 @@ export const translateWord = async (word: string): Promise<TranslationResponse> 
         reading_th: COMMON_PHONETICS[cleanWord] || azResult.reading_th || getThaiPhonetic(cleanWord),
       };
     } catch (err) {
-      console.warn('Azure Translator call failed, trying Gemini fallback:', err);
+      console.warn('Azure Translator call failed, trying direct Gemini fallback:', err);
     }
   }
 
@@ -243,7 +263,19 @@ Respond ONLY with valid JSON:
 export const batchTranslateWords = async (words: string[]): Promise<TranslationResponse[]> => {
   const uniqueWords = Array.from(new Set(words.map((w) => w.trim()))).filter(Boolean);
 
-  // 1. Try Azure OpenAI batch generation
+  // 1. Try Google AI Studio (Gemini) batch generation (Priority 1)
+  if (isGeminiConfigured()) {
+    try {
+      const geminiResults = await batchGenerateVocabWithGemini(uniqueWords);
+      if (geminiResults && geminiResults.length > 0) {
+        return geminiResults;
+      }
+    } catch (err) {
+      console.warn('Google AI Studio batch generation failed, trying Azure OpenAI fallback:', err);
+    }
+  }
+
+  // 2. Try Azure OpenAI batch generation (Fallback)
   if (isAzureOpenAIConfigured()) {
     try {
       const openAiResults = await batchGenerateVocabWithAzureOpenAI(uniqueWords);
@@ -279,10 +311,24 @@ export const extractVocabSheetFromImage = async (
   base64Image: string,
   mimeType = 'image/jpeg'
 ): Promise<ExtractedVocabSheet> => {
-  // 1. Primary: Microsoft Azure OpenAI Vision (gpt-4.1-mini)
+  // 1. Primary: Google AI Studio (Gemini Vision) (Priority 1)
+  if (isGeminiConfigured()) {
+    try {
+      console.log('[AI Service] Calling Google AI Studio Gemini Vision for worksheet image analysis...');
+      const sheetResult = await extractVocabListWithGeminiVision(base64Image, mimeType);
+      if (sheetResult.words && sheetResult.words.length > 0) {
+        console.log(`[AI Service] Gemini Vision successfully extracted ${sheetResult.words.length} words:`, sheetResult);
+        return sheetResult;
+      }
+    } catch (err) {
+      console.warn('Gemini Vision extraction failed, trying Azure OpenAI Vision fallback:', err);
+    }
+  }
+
+  // 2. Secondary: Microsoft Azure OpenAI Vision (gpt-4.1-mini) (Fallback)
   if (isAzureOpenAIConfigured()) {
     try {
-      console.log('[AI Service] Calling Azure OpenAI Vision for worksheet image analysis...');
+      console.log('[AI Service] Calling Azure OpenAI Vision fallback for worksheet image analysis...');
       const sheetResult = await extractVocabListWithAzureVision(base64Image, mimeType);
       if (sheetResult.words && sheetResult.words.length > 0) {
         // Guarantee every entry has an authentic Thai translation & phonetic reading
@@ -314,7 +360,7 @@ export const extractVocabSheetFromImage = async (
         return sheetResult;
       }
     } catch (err) {
-      console.warn('Azure OpenAI Vision extraction failed, trying Gemini Vision fallback:', err);
+      console.warn('Azure OpenAI Vision extraction failed, trying direct Gemini fallback:', err);
     }
   }
 
@@ -448,6 +494,19 @@ export const generateVocabFromPrompt = async (
 ): Promise<TranslationResponse[]> => {
   console.log(`[AI Service] generateVocabFromPrompt("${prompt}", count=${count})`);
   
+  // 1. Primary: Google AI Studio (Gemini) (Priority 1)
+  if (isGeminiConfigured()) {
+    try {
+      const items = await generateVocabFromPromptWithGemini(prompt, count, existingWords);
+      if (items.length > 0) {
+        return items;
+      }
+    } catch (err) {
+      console.warn('Google AI Studio prompt generation failed, trying Azure OpenAI fallback:', err);
+    }
+  }
+
+  // 2. Secondary: Azure OpenAI prompt generation (Fallback)
   if (isAzureOpenAIConfigured()) {
     try {
       const items = await generateVocabFromPromptWithAzureOpenAI(prompt, count, existingWords);
