@@ -169,18 +169,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const email = lineProfile.email || `line_${lineProfile.userId.toLowerCase()}@wordbuddy.line`;
+      const cleanUid = lineProfile.userId.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+      // Standardize to valid domain accepted by Supabase GoTrue RFC & MX checks
+      const email = lineProfile.email || `line_${cleanUid}@line.me`;
       const deterministicPassword = `LINE_WB_${lineProfile.userId}_AUTH!`;
 
-      // 1. Attempt login with deterministic credential
-      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+      // 1. Attempt login with deterministic credentials
+      let { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
         email,
         password: deterministicPassword,
       });
 
-      let authUserId = signInData?.user?.id;
+      let activeSession = signInData?.session || null;
+      let authUserId = signInData?.user?.id || null;
 
-      // 2. If user doesn't exist, sign them up
+      // 2. If user doesn't exist yet, sign them up
       if (signInErr || !authUserId) {
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
           email,
@@ -193,26 +196,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         });
 
-        if (!signUpErr && signUpData?.user) {
+        if (signUpErr) {
+          // If already registered or transient failure, try signing in again
+          const retrySignIn = await supabase.auth.signInWithPassword({
+            email,
+            password: deterministicPassword,
+          });
+          if (retrySignIn.error) {
+            return { error: retrySignIn.error as Error };
+          }
+          activeSession = retrySignIn.data.session;
+          authUserId = retrySignIn.data.user.id;
+        } else if (signUpData.user) {
           authUserId = signUpData.user.id;
-          // Set session if available
-          if (signUpData.session) {
-            setSession(signUpData.session);
-            setUser(signUpData.user);
+          activeSession = signUpData.session;
+
+          // If session wasn't returned on signup, explicitly authenticate
+          if (!activeSession) {
+            const explicitSignIn = await supabase.auth.signInWithPassword({
+              email,
+              password: deterministicPassword,
+            });
+            activeSession = explicitSignIn.data?.session || null;
           }
         }
       }
 
-      // 3. Upsert profile with LINE UID and display data
+      if (activeSession) {
+        setSession(activeSession);
+        setUser(activeSession.user);
+      }
+
+      // 3. Update profile with LINE metadata
       if (authUserId) {
-        await supabase.from('profiles').upsert({
-          id: authUserId,
-          display_name: lineProfile.displayName,
-          avatar_url: lineProfile.pictureUrl || null,
+        const updatePayload: {
+          line_user_id: string;
+          line_display_name: string;
+          line_picture_url: string | null;
+          display_name?: string;
+          avatar_url?: string | null;
+        } = {
           line_user_id: lineProfile.userId,
           line_display_name: lineProfile.displayName,
           line_picture_url: lineProfile.pictureUrl || null,
-        });
+        };
+        if (lineProfile.displayName) {
+          updatePayload.display_name = lineProfile.displayName;
+        }
+        if (lineProfile.pictureUrl) {
+          updatePayload.avatar_url = lineProfile.pictureUrl;
+        }
+
+        const { error: updateErr } = await supabase
+          .from('profiles')
+          .update(updatePayload)
+          .eq('id', authUserId);
+
+        if (updateErr) {
+          console.warn('Could not update profile with LINE details:', updateErr.message);
+        }
 
         await fetchProfile(authUserId);
       }

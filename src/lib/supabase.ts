@@ -7,9 +7,14 @@ const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_6BmHC8iAt8tru7TIt2y--w__FAEH19
 const rawUrl = import.meta.env.VITE_SUPABASE_URL;
 const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+const sanitizeSupabaseUrl = (url?: string): string => {
+  if (!url) return '';
+  return url.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+};
+
 const supabaseUrl = (rawUrl && rawUrl !== 'true' && rawUrl.startsWith('http'))
-  ? rawUrl
-  : DEFAULT_SUPABASE_URL;
+  ? sanitizeSupabaseUrl(rawUrl)
+  : sanitizeSupabaseUrl(DEFAULT_SUPABASE_URL);
 
 const supabaseAnonKey = (rawKey && rawKey !== 'true' && rawKey.length > 10)
   ? rawKey
@@ -28,4 +33,3 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
   },
 });
-

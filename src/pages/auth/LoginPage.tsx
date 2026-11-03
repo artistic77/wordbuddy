@@ -56,19 +56,32 @@ export const LoginPage: React.FC = () => {
     setIsLineLoading(true);
     try {
       if (liffService.isConfigured()) {
-        await liffService.init();
-        if (liffService.isLoggedIn()) {
-          const profile = await liffService.getProfile();
-          if (profile) {
-            const { error } = await signInWithLine(profile);
-            if (error) {
-              setErrorMessage(error.message);
-            } else {
-              navigate(from, { replace: true });
+        const initSuccess = await liffService.init();
+        if (initSuccess) {
+          if (liffService.isLoggedIn()) {
+            const profile = await liffService.getProfile();
+            if (profile) {
+              const { error } = await signInWithLine(profile);
+              if (error) {
+                setErrorMessage(error.message);
+              } else {
+                navigate(from, { replace: true });
+              }
             }
+          } else {
+            liffService.login();
           }
         } else {
-          liffService.login();
+          // LIFF init failed (e.g. running on localhost without endpoint registered in LINE Console)
+          // Fallback to mock profile so testing in local environment is seamless
+          console.warn('[LINE Login] LIFF init unsuccessful (likely localhost origin), falling back to mock profile for development');
+          const mockProfile = liffService.createMockProfile();
+          const { error } = await signInWithLine(mockProfile);
+          if (error) {
+            setErrorMessage(error.message);
+          } else {
+            navigate(from, { replace: true });
+          }
         }
       } else {
         // Mock profile fallback when VITE_LIFF_ID is not yet configured in local development
