@@ -12,11 +12,20 @@ const sanitizeSupabaseUrl = (url?: string): string => {
   return url.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 };
 
-const supabaseUrl = (rawUrl && rawUrl !== 'true' && rawUrl.startsWith('http'))
+// Ignore deprecated/inactive projects that might still be stored in host env vars
+const isKnownDeadUrl = (url?: string): boolean => {
+  return Boolean(url && url.includes('nsvjrnafqqfcnertmwzz'));
+};
+
+const isKnownDeadKey = (key?: string): boolean => {
+  return Boolean(key && key.includes('6BmHC8iAt8tru7TIt2y'));
+};
+
+const supabaseUrl = (rawUrl && rawUrl !== 'true' && rawUrl.startsWith('http') && !isKnownDeadUrl(rawUrl))
   ? sanitizeSupabaseUrl(rawUrl)
   : sanitizeSupabaseUrl(DEFAULT_SUPABASE_URL);
 
-const supabaseAnonKey = (rawKey && rawKey !== 'true' && rawKey.length > 10)
+const supabaseAnonKey = (rawKey && rawKey !== 'true' && rawKey.length > 10 && !isKnownDeadKey(rawKey))
   ? rawKey
   : DEFAULT_SUPABASE_ANON_KEY;
 

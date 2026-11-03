@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('utc'::text, NOW())
 );
 
+-- Ensure idempotent columns exist if profiles table pre-existed
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS line_user_id TEXT UNIQUE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS line_display_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS line_picture_url TEXT;
+
 -- Vocab Sets table
 CREATE TABLE IF NOT EXISTS public.vocab_sets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

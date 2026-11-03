@@ -14,7 +14,7 @@ export interface ExtractedVocabSheet {
 }
 
 const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash';
-const FALLBACK_MODELS = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash'];
+const FALLBACK_MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 
 export const getGeminiApiKey = (): string => {
   const envKey = import.meta.env.VITE_GEMINI_API_KEY;
