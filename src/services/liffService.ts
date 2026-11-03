@@ -8,7 +8,8 @@ export interface LineUserProfile {
   email?: string;
 }
 
-const LIFF_ID = import.meta.env.VITE_LIFF_ID || '';
+const DEFAULT_LIFF_ID = '2011409143-n8oP9xkl';
+const LIFF_ID = import.meta.env.VITE_LIFF_ID || DEFAULT_LIFF_ID;
 let isInitialized = false;
 let initPromise: Promise<boolean> | null = null;
 
